@@ -25,4 +25,14 @@ public class RestaurantPersistenceAdapter implements RestaurantPersistencePort {
         return restaurantRepository.save(restaurantEntityMapper.toEntity(restaurant))
                 .map(restaurantEntityMapper::toDomain);
     }
+
+    @Override
+    public Mono<Boolean> existByOwner(Long restaurantId, Long ownerId) {
+        return restaurantRepository.existsByIdAndOwnerId(restaurantId, ownerId);
+    }
+
+    @Override
+    public Mono<Boolean> existById(Long restaurantId) {
+        return restaurantRepository.existsById(restaurantId);
+    }
 }

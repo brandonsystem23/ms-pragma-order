@@ -7,4 +7,6 @@ import reactor.core.publisher.Mono;
 public interface RestaurantRepository extends ReactiveCrudRepository<RestaurantEntity, Long> {
 
     Mono<Boolean> existsByNit(String nit);
+
+    Mono<Boolean> existsByIdAndOwnerId(Long restaurantId, Long ownerId);
 }

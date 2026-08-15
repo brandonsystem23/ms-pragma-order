@@ -96,4 +96,18 @@ class GlobalExceptionHandlerTest {
         assertEquals(500, response.getStatusCode().value());
         assertEquals("Ocurrió un error interno en el servidor", response.getBody().message());
     }
+
+    @Test
+    void shouldHandleInternalError() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.INTERNAL_ERROR,
+                "Error interno de dominio"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(500, response.getStatusCode().value());
+        assertEquals("Error interno de dominio", response.getBody().message());
+    }
+
 }

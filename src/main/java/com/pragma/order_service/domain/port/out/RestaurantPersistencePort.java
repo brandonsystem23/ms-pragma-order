@@ -8,4 +8,8 @@ public interface RestaurantPersistencePort {
     Mono<Boolean> existsByNit(String nit);
 
     Mono<Restaurant> save(Restaurant restaurant);
+
+    Mono<Boolean> existByOwner(Long restaurantId, Long ownerId);
+
+    Mono<Boolean> existById(Long restaurantId);
 }

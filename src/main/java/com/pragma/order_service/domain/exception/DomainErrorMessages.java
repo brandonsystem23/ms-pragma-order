@@ -21,8 +21,24 @@ public final class DomainErrorMessages {
     public static final String OWNER_NOT_FOUND = "El propietario no existe";
     public static final String INVALID_OWNER_ROLE = "El usuario indicado no tiene rol PROPIETARIO";
 
+    public static final String DUPLICATE_NAME = "El nombre del palto ya está registrado";
+
+    public static final String PRICE_REQUIRED = "El campo price es obligatorio";
+    public static final String PRICE_INVALID = "El price solo puede ser un número entero positivo";
+
+    public static final String DESCRIPTION_REQUIRED = "El campo description es obligatorio";
+
+    public static final String URL_IMAGE_REQUIRED = "El campo urlImage es obligatorio";
+
+    public static final String CATEGORY_REQUIRED = "El campo category es obligatorio";
+
+    public static final String RESTAURANT_ID_REQUIRED = "El campo restaurantId es obligatorio";
+    public static final String RESTAURANT_NOT_FOUND = "El restaurante no existe";
+    public static final String INVALID_RESTAURANT = "Usted no es propietario del restaurante";
+    public static final String DISH_ACCESS_DENIED = "No tienes permisos para crear platos";
+
     public static final String INVALID_TOKEN = "Token inválido o expirado";
-    public static final String ACCESS_DENIED = "No tienes permisos para crear restaurantes";
+    public static final String RESTAURANT_ACCESS_DENIED = "No tienes permisos para crear restaurantes";
 
     private DomainErrorMessages() {
     }
