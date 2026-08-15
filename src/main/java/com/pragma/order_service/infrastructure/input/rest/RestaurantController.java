@@ -20,7 +20,7 @@ public class RestaurantController {
 
     private final RestaurantApplicationService restaurantApplicationService;
 
-    @PostMapping
+    @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Crear restaurante", description = "Crea un restaurante asignandolo a un propietario. Requiere rol ADMIN")
     public Mono<RestaurantResponse> create(

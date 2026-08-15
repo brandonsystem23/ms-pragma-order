@@ -77,4 +77,25 @@ class RestaurantPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldReturnTrueWhenRestaurantExistsByOwner() {
+        when(restaurantRepository.existsByIdAndOwnerId(1L, 2L))
+                .thenReturn(Mono.just(true));
+
+        StepVerifier.create(restaurantPersistenceAdapter.existByOwner(1L, 2L))
+                .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnTrueWhenRestaurantExistsById() {
+        when(restaurantRepository.existsById(1L))
+                .thenReturn(Mono.just(true));
+
+        StepVerifier.create(restaurantPersistenceAdapter.existById(1L))
+                .expectNext(true)
+                .verifyComplete();
+    }
+
 }

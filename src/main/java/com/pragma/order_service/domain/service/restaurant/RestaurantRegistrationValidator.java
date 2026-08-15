@@ -1,4 +1,4 @@
-package com.pragma.order_service.domain.service;
+package com.pragma.order_service.domain.service.restaurant;
 
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
@@ -41,7 +41,7 @@ public class RestaurantRegistrationValidator {
         if (!ADMIN_ROLE.equals(authSession.role())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
-                    DomainErrorMessages.ACCESS_DENIED
+                    DomainErrorMessages.RESTAURANT_ACCESS_DENIED
             ));
         }
 
