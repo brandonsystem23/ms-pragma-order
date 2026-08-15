@@ -1,0 +1,99 @@
+package com.pragma.order_service.infrastructure.input.rest;
+
+import com.pragma.order_service.domain.exception.DomainErrorCode;
+import com.pragma.order_service.domain.exception.DomainException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class GlobalExceptionHandlerTest {
+
+    private GlobalExceptionHandler handler;
+    private MockServerWebExchange exchange;
+
+    @BeforeEach
+    void setUp() {
+        handler = new GlobalExceptionHandler();
+        exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/restaurants").build()
+        );
+    }
+
+    @Test
+    void shouldHandleValidationError() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.VALIDATION_ERROR,
+                "El campo name es obligatorio"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("El campo name es obligatorio", response.getBody().message());
+    }
+
+    @Test
+    void shouldHandleInvalidToken() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.INVALID_TOKEN,
+                "Token inválido o expirado"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(401, response.getStatusCode().value());
+        assertEquals("Token inválido o expirado", response.getBody().message());
+    }
+
+    @Test
+    void shouldHandleOwnerNotFound() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.OWNER_NOT_FOUND,
+                "El propietario no existe"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(404, response.getStatusCode().value());
+        assertEquals("El propietario no existe", response.getBody().message());
+    }
+
+    @Test
+    void shouldHandleAccessDenied() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.ACCESS_DENIED,
+                "No tienes permisos para crear restaurantes"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(403, response.getStatusCode().value());
+        assertEquals("No tienes permisos para crear restaurantes", response.getBody().message());
+    }
+
+    @Test
+    void shouldHandleIllegalArgumentException() {
+        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(
+                new IllegalArgumentException("Authorization header inválido"),
+                exchange
+        );
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("Authorization header inválido", response.getBody().message());
+    }
+
+    @Test
+    void shouldHandleGenericException() {
+        ResponseEntity<ErrorResponse> response = handler.handleGenericException(
+                new RuntimeException("Unexpected error"),
+                exchange
+        );
+
+        assertEquals(500, response.getStatusCode().value());
+        assertEquals("Ocurrió un error interno en el servidor", response.getBody().message());
+    }
+}
