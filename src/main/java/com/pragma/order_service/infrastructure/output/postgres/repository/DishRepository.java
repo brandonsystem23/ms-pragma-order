@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface DishRepository extends ReactiveCrudRepository<DishEntity, Long> {
 
-    Mono<Boolean> existsByName(String name);
+    Mono<Boolean> existsByNameIgnoreCase(String name);
 
 }
