@@ -33,7 +33,7 @@ class DishPersistenceAdapterTest {
 
     @Test
     void shouldReturnTrueWhenDishNameExists() {
-        when(dishRepository.existsByName(anyString()))
+        when(dishRepository.existsByNameIgnoreCase(anyString()))
                 .thenReturn(Mono.just(true));
 
         StepVerifier.create(dishPersistenceAdapter.existsByName("Pizza Hawaiana"))

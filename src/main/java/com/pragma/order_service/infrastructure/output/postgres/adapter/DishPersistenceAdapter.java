@@ -17,7 +17,7 @@ public class DishPersistenceAdapter implements DishPersistencePort {
 
     @Override
     public Mono<Boolean> existsByName(String name) {
-        return dishRepository.existsByName(name);
+        return dishRepository.existsByNameIgnoreCase(name);
     }
 
     @Override
