@@ -5,7 +5,7 @@ plugins {
 	id 'jacoco'
 }
 
-group = 'com.plazoleta'
+group = 'com.pragma'
 version = '1.0.0'
 
 java {
@@ -122,14 +122,14 @@ jacocoTestReport {
 	classDirectories.setFrom(
 			files(classDirectories.files.collect {
 				fileTree(dir: it, exclude: [
-						'com/plazoleta/order_service/OrderServiceApplication*',
-						'com/plazoleta/order_service/application/dto/**',
-						'com/plazoleta/order_service/application/mapper/**',
-						'com/plazoleta/order_service/domain/model/**',
-						'com/plazoleta/order_service/domain/port/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/entity/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/repository/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/mapper/**'
+						'com/pragma/order_service/OrderServiceApplication*',
+						'com/pragma/order_service/application/dto/**',
+						'com/pragma/order_service/application/mapper/**',
+						'com/pragma/order_service/domain/model/**',
+						'com/pragma/order_service/domain/port/**',
+						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
+						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
+						'com/pragma/order_service/infrastructure/output/postgres/mapper/**'
 				])
 			})
 	)
@@ -147,7 +147,7 @@ jacocoTestCoverageVerification {
 			limit {
 				counter = 'LINE'
 				value = 'COVEREDRATIO'
-				minimum = 0.01
+				minimum = 0.95
 			}
 		}
 	}
@@ -155,14 +155,14 @@ jacocoTestCoverageVerification {
 	classDirectories.setFrom(
 			files(classDirectories.files.collect {
 				fileTree(dir: it, exclude: [
-						'com/plazoleta/order_service/OrderServiceApplication*',
-						'com/plazoleta/order_service/application/dto/**',
-						'com/plazoleta/order_service/application/mapper/**',
-						'com/plazoleta/order_service/domain/model/**',
-						'com/plazoleta/order_service/domain/port/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/entity/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/repository/**',
-						'com/plazoleta/order_service/infrastructure/output/postgres/mapper/**'
+						'com/pragma/order_service/OrderServiceApplication*',
+						'com/pragma/order_service/application/dto/**',
+						'com/pragma/order_service/application/mapper/**',
+						'com/pragma/order_service/domain/model/**',
+						'com/pragma/order_service/domain/port/**',
+						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
+						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
+						'com/pragma/order_service/infrastructure/output/postgres/mapper/**'
 				])
 			})
 	)
