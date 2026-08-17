@@ -2,11 +2,15 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainException;
+import com.pragma.order_service.infrastructure.exception.ExternalServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -33,7 +37,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
 
         assertEquals(400, response.getStatusCode().value());
-        assertEquals("El campo name es obligatorio", response.getBody().message());
+        assertEquals("El campo name es obligatorio", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -46,7 +50,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
 
         assertEquals(401, response.getStatusCode().value());
-        assertEquals("Token inválido o expirado", response.getBody().message());
+        assertEquals("Token inválido o expirado", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -59,7 +63,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
 
         assertEquals(404, response.getStatusCode().value());
-        assertEquals("El propietario no existe", response.getBody().message());
+        assertEquals("El propietario no existe", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -72,7 +76,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
 
         assertEquals(403, response.getStatusCode().value());
-        assertEquals("No tienes permisos para crear restaurantes", response.getBody().message());
+        assertEquals("No tienes permisos para crear restaurantes", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -83,7 +87,7 @@ class GlobalExceptionHandlerTest {
         );
 
         assertEquals(400, response.getStatusCode().value());
-        assertEquals("Authorization header inválido", response.getBody().message());
+        assertEquals("Authorization header inválido", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -94,7 +98,7 @@ class GlobalExceptionHandlerTest {
         );
 
         assertEquals(500, response.getStatusCode().value());
-        assertEquals("Ocurrió un error interno en el servidor", response.getBody().message());
+        assertEquals("Ocurrió un error interno en el servidor", Objects.requireNonNull(response.getBody()).message());
     }
 
     @Test
@@ -107,7 +111,19 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
 
         assertEquals(500, response.getStatusCode().value());
-        assertEquals("Error interno de dominio", response.getBody().message());
+        assertEquals("Error interno de dominio", Objects.requireNonNull(response.getBody()).message());
     }
 
+    @Test
+    void shouldHandleExternalServiceException() {
+        ExternalServiceException ex = new ExternalServiceException(
+                HttpStatus.NOT_FOUND,
+                "El usuario no existe"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleExternalServiceException(ex, exchange);
+
+        assertEquals(404, response.getStatusCode().value());
+        assertEquals("El usuario no existe", Objects.requireNonNull(response.getBody()).message());
+    }
 }

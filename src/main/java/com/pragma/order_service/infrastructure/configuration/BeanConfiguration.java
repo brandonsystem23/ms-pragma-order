@@ -5,7 +5,7 @@ import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
-import com.pragma.order_service.domain.port.out.UserQueryPort;
+import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
 import com.pragma.order_service.domain.service.dish.DishDomainValidator;
 import com.pragma.order_service.domain.service.dish.DishRegistrationValidator;
@@ -27,12 +27,12 @@ public class BeanConfiguration {
     public RestaurantRegistrationValidator restaurantRegistrationValidator(
             RestaurantPersistencePort restaurantPersistencePort,
             AuthSessionPort authSessionPort,
-            UserQueryPort userQueryPort
+            UserWebClientPort userWebClientPort
     ) {
         return new RestaurantRegistrationValidator(
                 restaurantPersistencePort,
                 authSessionPort,
-                userQueryPort
+                userWebClientPort
         );
     }
 

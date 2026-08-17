@@ -90,6 +90,7 @@ dependencies {
 	// ==========================================
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -129,7 +130,8 @@ jacocoTestReport {
 						'com/pragma/order_service/domain/port/**',
 						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
 						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
-						'com/pragma/order_service/infrastructure/output/postgres/mapper/**'
+						'com/pragma/order_service/infrastructure/output/postgres/mapper/**',
+						'com/pragma/order_service/infrastructure/output/webclient/mapper/**'
 				])
 			})
 	)
@@ -162,7 +164,8 @@ jacocoTestCoverageVerification {
 						'com/pragma/order_service/domain/port/**',
 						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
 						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
-						'com/pragma/order_service/infrastructure/output/postgres/mapper/**'
+						'com/pragma/order_service/infrastructure/output/postgres/mapper/**',
+						'com/pragma/order_service/infrastructure/output/webclient/mapper/**'
 				])
 			})
 	)

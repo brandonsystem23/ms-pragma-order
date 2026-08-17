@@ -7,7 +7,7 @@ import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
-import com.pragma.order_service.domain.port.out.UserQueryPort;
+import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -19,12 +19,12 @@ public class RestaurantRegistrationValidator {
 
     private final RestaurantPersistencePort restaurantPersistencePort;
     private final AuthSessionPort authSessionPort;
-    private final UserQueryPort userQueryPort;
+    private final UserWebClientPort userWebClientPort;
 
     public Mono<Void> validate(String nit, Long ownerId, String token) {
         return validateAdminRole(token)
                 .then(validateNit(nit))
-                .then(validateOwner(ownerId));
+                .then(validateOwner(ownerId, token));
     }
 
     private Mono<Void> validateAdminRole(String token) {
@@ -58,8 +58,8 @@ public class RestaurantRegistrationValidator {
                         : Mono.empty());
     }
 
-    private Mono<Void> validateOwner(Long ownerId) {
-        return userQueryPort.findById(ownerId)
+    private Mono<Void> validateOwner(Long ownerId, String token) {
+        return userWebClientPort.findById(ownerId, token)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.OWNER_NOT_FOUND,
                         DomainErrorMessages.OWNER_NOT_FOUND

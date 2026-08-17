@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
-
+import com.pragma.order_service.infrastructure.exception.ExternalServiceException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -20,6 +20,15 @@ public class GlobalExceptionHandler {
         HttpStatus status = mapStatus(ex.getCode());
         return buildResponse(status, ex.getMessage(), exchange, List.of());
     }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<ErrorResponse> handleExternalServiceException(
+            ExternalServiceException ex,
+            ServerWebExchange exchange
+    ) {
+        return buildResponse(ex.getStatus(), ex.getMessage(), exchange, List.of());
+    }
+
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, ServerWebExchange exchange) {
