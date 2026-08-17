@@ -159,4 +159,48 @@ class DishApplicationServiceTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldUpdateStatusDishSuccessfully() {
+
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(20))
+                .description("Descripción actualizada")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        DishResponse dishResponse = DishResponse.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(20))
+                .description("Descripción actualizada")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(false)
+                .restaurantId(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(updateDishUseCase.updateStatus(anyLong(), any(), anyString()))
+                .thenReturn(Mono.just(dish));
+
+        when(dishDtoMapper.toResponse(any())).thenReturn(dishResponse);
+
+        StepVerifier.create(dishApplicationService.updateStatus(1L, false, "token-test"))
+                .assertNext(response -> {
+                    Assertions.assertEquals(1L, response.id());
+                    Assertions.assertEquals(BigDecimal.valueOf(20), response.price());
+                    Assertions.assertEquals("Descripción actualizada", response.description());
+                    Assertions.assertEquals(false, response.status());
+                })
+                .verifyComplete();
+    }
+
 }

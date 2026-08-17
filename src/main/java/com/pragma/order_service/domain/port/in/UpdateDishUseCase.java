@@ -7,5 +7,7 @@ import reactor.core.publisher.Mono;
 public interface UpdateDishUseCase {
 
     Mono<Dish> update(Long dishId, UpdateDishCommand command, String token);
+
+    Mono<Dish> updateStatus(Long dishId, Boolean status, String token);
 }
 

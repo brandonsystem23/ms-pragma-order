@@ -43,6 +43,7 @@ public final class DomainErrorMessages {
     public static final String DISH_NOT_FOUND = "El plato no existe";
     public static final String DISH_ID_REQUIRED = "El campo dishId es obligatorio";
     public static final String DISH_UPDATE_FIELDS_REQUIRED = "Debe enviar al menos uno de los campos: price o description";
+    public static final String DISH_STATUS_REQUIRED = "El campo status es obligatorio";
 
 
     private DomainErrorMessages() {

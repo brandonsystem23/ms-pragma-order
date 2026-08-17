@@ -43,4 +43,16 @@ public class DishController {
         String token = TokenExtractor.extract(authorizationHeader);
         return dishApplicationService.update(dishId, request, token);
     }
+
+    @PatchMapping("/{dishId}/status")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Habilitar o deshabilitar plato", description = "Cambia el estado de disponibilidad de un plato. Requiere rol PROPIETARIO")
+    public Mono<DishResponse> updateStatus(
+            @PathVariable Long dishId,
+            @RequestParam boolean status,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return dishApplicationService.updateStatus(dishId, status, token);
+    }
 }

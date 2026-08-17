@@ -98,4 +98,30 @@ class DishControllerTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldUpdateStatusDishSuccessfully() {
+        DishResponse response = DishResponse.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(30000))
+                .description("Descripción actualizada")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(dishApplicationService.updateStatus(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
+
+        StepVerifier.create(dishController.updateStatus(1L, false,"Bearer token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.id());
+                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.price());
+                    Assertions.assertEquals("Descripción actualizada", result.description());
+                })
+                .verifyComplete();
+    }
+
 }

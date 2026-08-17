@@ -121,4 +121,22 @@ class UpdateDishDomainValidatorTest {
 
         assertEquals("El campo description es obligatorio", ex.getMessage());
     }
+
+    @Test
+    void shouldValidateSuccessfullyWhenStatusIsTrue() {
+        assertDoesNotThrow(() -> validator.validateForUpdateStatus(1L, true));
+    }
+
+    @Test
+    void shouldValidateSuccessfullyWhenStatusIsFalse() {
+        assertDoesNotThrow(() -> validator.validateForUpdateStatus(1L, false));
+    }
+
+    @Test
+    void shouldThrowWhenStatusIsNull() {
+        DomainException ex = assertThrows(DomainException.class,
+                () -> validator.validateForUpdateStatus(1L, null));
+
+        assertEquals("El campo status es obligatorio", ex.getMessage());
+    }
 }

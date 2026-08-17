@@ -64,12 +64,54 @@ class UpdateDishServiceTest {
                 .build();
 
         doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString()))
+        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
                 .thenReturn(Mono.just(existingDish));
         when(dishPersistencePort.save(any()))
                 .thenReturn(Mono.just(updatedDish));
 
         StepVerifier.create(service.update(1L, command, "token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.getId());
+                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getPrice());
+                    Assertions.assertEquals("Descripción actualizada", result.getDescription());
+                    Assertions.assertEquals("Pizza Hawaiana", result.getName());
+                })
+                .verifyComplete();
+
+    }
+
+    @Test
+    void shouldUpdateStatusDishSuccessfully() {
+
+        Dish existingDish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Descripción anterior")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        Dish updatedDish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(30000))
+                .description("Descripción actualizada")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        doNothing().when(updateDishDomainValidator).validateForUpdateStatus(anyLong(), any());
+        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
+                .thenReturn(Mono.just(existingDish));
+        when(dishPersistencePort.save(any()))
+                .thenReturn(Mono.just(updatedDish));
+
+        StepVerifier.create(service.updateStatus(1L, false, "token-test"))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.getId());
                     Assertions.assertEquals(BigDecimal.valueOf(30000), result.getPrice());
@@ -110,7 +152,7 @@ class UpdateDishServiceTest {
                 .build();
 
         doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString()))
+        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
                 .thenReturn(Mono.just(existingDish));
         when(dishPersistencePort.save(any()))
                 .thenReturn(Mono.just(updatedDish));
@@ -153,7 +195,7 @@ class UpdateDishServiceTest {
                 .build();
 
         doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString()))
+        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
                 .thenReturn(Mono.just(existingDish));
         when(dishPersistencePort.save(any()))
                 .thenReturn(Mono.just(updatedDish));

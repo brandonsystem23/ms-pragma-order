@@ -20,11 +20,19 @@ public class UpdateDishRegistrationValidator {
     private final RestaurantPersistencePort restaurantPersistencePort;
     private final AuthSessionPort authSessionPort;
 
-    public Mono<Dish> validate(Long dishId, String token) {
+    public Mono<Dish> validate(Long dishId, String token, Boolean status) {
         return validateOwnerRole(token)
-                .flatMap(authSession -> findDish(dishId)
-                        .flatMap(dish -> validateRestaurantOwnership(dish, authSession.userId())
-                                .thenReturn(dish))
+                .flatMap(authSession -> {
+                    if (status != null) {
+                        return findDish(dishId)
+                                .flatMap(dish -> validateRestaurantOwnership(dish, authSession.userId())
+                                        .thenReturn(dish));
+                    }
+
+                    return findDishActive(dishId)
+                            .flatMap(dish -> validateRestaurantOwnership(dish, authSession.userId())
+                                    .thenReturn(dish));
+                }
                 );
     }
 
@@ -50,6 +58,14 @@ public class UpdateDishRegistrationValidator {
 
     private Mono<Dish> findDish(Long dishId) {
         return dishPersistencePort.findById(dishId)
+                .switchIfEmpty(Mono.error(new DomainException(
+                        DomainErrorCode.DISH_NOT_FOUND,
+                        DomainErrorMessages.DISH_NOT_FOUND
+                )));
+    }
+
+    private Mono<Dish> findDishActive(Long dishId) {
+        return dishPersistencePort.findByIdAndStatusTrue(dishId)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.DISH_NOT_FOUND,
                         DomainErrorMessages.DISH_NOT_FOUND

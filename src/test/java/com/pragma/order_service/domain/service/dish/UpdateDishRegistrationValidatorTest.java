@@ -52,10 +52,10 @@ class UpdateDishRegistrationValidatorTest {
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(dishPersistencePort.findById(anyLong())).thenReturn(Mono.just(dish));
+        when(dishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.just(dish));
         when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
 
-        StepVerifier.create(validator.validate(1L, "token-test"))
+        StepVerifier.create(validator.validate(1L, "token-test", null))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.getId());
                     Assertions.assertEquals(10L, result.getRestaurantId());
@@ -64,10 +64,39 @@ class UpdateDishRegistrationValidatorTest {
     }
 
     @Test
+    void shouldValidateStatusSuccessfully() {
+        AuthSession authSession = AuthSession.builder()
+                .userId(2L)
+                .role("PROPIETARIO")
+                .build();
+
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza")
+                .price(BigDecimal.valueOf(25000))
+                .description("Original")
+                .restaurantId(10L)
+                .status(false)
+                .build();
+
+        when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
+        when(dishPersistencePort.findById(anyLong())).thenReturn(Mono.just(dish));
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
+
+        StepVerifier.create(validator.validate(1L, "token-test", false))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.getId());
+                    Assertions.assertEquals(10L, result.getRestaurantId());
+                    Assertions.assertEquals(false, result.getStatus());
+                })
+                .verifyComplete();
+    }
+
+    @Test
     void shouldFailWhenTokenIsInvalid() {
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.empty());
 
-        StepVerifier.create(validator.validate(1L, "bad-token"))
+        StepVerifier.create(validator.validate(1L, "bad-token", null))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("Token inválido o expirado", error.getMessage());
@@ -84,7 +113,7 @@ class UpdateDishRegistrationValidatorTest {
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
 
-        StepVerifier.create(validator.validate(1L, "token-test"))
+        StepVerifier.create(validator.validate(1L, "token-test", null))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("No tienes permisos para crear platos", error.getMessage());
@@ -100,9 +129,9 @@ class UpdateDishRegistrationValidatorTest {
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(dishPersistencePort.findById(anyLong())).thenReturn(Mono.empty());
+        when(dishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.empty());
 
-        StepVerifier.create(validator.validate(1L, "token-test"))
+        StepVerifier.create(validator.validate(1L, "token-test", null))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("El plato no existe", error.getMessage());
@@ -123,10 +152,10 @@ class UpdateDishRegistrationValidatorTest {
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(dishPersistencePort.findById(anyLong())).thenReturn(Mono.just(dish));
+        when(dishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.just(dish));
         when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(false));
 
-        StepVerifier.create(validator.validate(1L, "token-test"))
+        StepVerifier.create(validator.validate(1L, "token-test", null))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("Usted no es propietario del restaurante", error.getMessage());
