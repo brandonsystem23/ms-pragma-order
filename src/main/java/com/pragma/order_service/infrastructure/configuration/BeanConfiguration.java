@@ -2,13 +2,17 @@ package com.pragma.order_service.infrastructure.configuration;
 
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
-import com.pragma.order_service.domain.port.out.UserQueryPort;
+import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
 import com.pragma.order_service.domain.service.dish.DishDomainValidator;
 import com.pragma.order_service.domain.service.dish.DishRegistrationValidator;
+import com.pragma.order_service.domain.service.dish.UpdateDishDomainValidator;
+import com.pragma.order_service.domain.service.dish.UpdateDishRegistrationValidator;
+import com.pragma.order_service.domain.service.dish.UpdateDishService;
 import com.pragma.order_service.domain.service.restaurant.CreateRestaurantService;
 import com.pragma.order_service.domain.service.restaurant.RestaurantDomainValidator;
 import com.pragma.order_service.domain.service.restaurant.RestaurantRegistrationValidator;
@@ -27,12 +31,12 @@ public class BeanConfiguration {
     public RestaurantRegistrationValidator restaurantRegistrationValidator(
             RestaurantPersistencePort restaurantPersistencePort,
             AuthSessionPort authSessionPort,
-            UserQueryPort userQueryPort
+            UserWebClientPort userWebClientPort
     ) {
         return new RestaurantRegistrationValidator(
                 restaurantPersistencePort,
                 authSessionPort,
-                userQueryPort
+                userWebClientPort
         );
     }
 
@@ -78,6 +82,37 @@ public class BeanConfiguration {
                 dishPersistencePort,
                 dishRegistrationValidator,
                 dishDomainValidator
+        );
+    }
+
+    @Bean
+    public UpdateDishDomainValidator updateDishDomainValidator() {
+        return new UpdateDishDomainValidator();
+    }
+
+    @Bean
+    public UpdateDishRegistrationValidator updateDishRegistrationValidator(
+            DishPersistencePort dishPersistencePort,
+            RestaurantPersistencePort restaurantPersistencePort,
+            AuthSessionPort authSessionPort
+    ) {
+        return new UpdateDishRegistrationValidator(
+                dishPersistencePort,
+                restaurantPersistencePort,
+                authSessionPort
+        );
+    }
+
+    @Bean
+    public UpdateDishUseCase updateDishUseCase(
+            DishPersistencePort dishPersistencePort,
+            UpdateDishRegistrationValidator updateDishRegistrationValidator,
+            UpdateDishDomainValidator updateDishDomainValidator
+    ) {
+        return new UpdateDishService(
+                dishPersistencePort,
+                updateDishRegistrationValidator,
+                updateDishDomainValidator
         );
     }
 }

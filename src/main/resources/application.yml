@@ -22,6 +22,11 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+clients:
+  users:
+    base-url: ${USERS_SERVICE_URL:http://localhost:8081}
+    path: /api/v1/users/find
+
 logging:
   level:
     root: INFO

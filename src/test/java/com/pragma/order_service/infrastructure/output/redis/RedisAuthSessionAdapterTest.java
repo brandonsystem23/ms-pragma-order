@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -30,11 +31,12 @@ class RedisAuthSessionAdapterTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @InjectMocks
     private RedisAuthSessionAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        adapter = new RedisAuthSessionAdapter(redisTemplate, objectMapper);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test
@@ -46,7 +48,6 @@ class RedisAuthSessionAdapterTest {
                 .role("ADMIN")
                 .build();
 
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(Mono.just("{}"));
         when(objectMapper.readValue(anyString(), eq(AuthSession.class))).thenReturn(authSession);
 
@@ -62,7 +63,6 @@ class RedisAuthSessionAdapterTest {
     void shouldReturnEmptyWhenTokenDoesNotExist() {
         String token = "token-test";
 
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(Mono.empty());
 
         StepVerifier.create(adapter.findByToken(token))
@@ -73,7 +73,6 @@ class RedisAuthSessionAdapterTest {
     void shouldReturnErrorWhenJsonDeserializationFails() throws Exception {
         String token = "token-test";
 
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(Mono.just("{}"));
         when(objectMapper.readValue(anyString(), eq(AuthSession.class)))
                 .thenThrow(new JsonProcessingException("error") {});

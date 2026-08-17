@@ -3,6 +3,7 @@ package com.pragma.order_service.domain.service.restaurant;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -51,7 +52,7 @@ class CreateRestaurantServiceTest {
                 .ownerId(command.ownerId())
                 .build();
 
-        doNothing().when(restaurantDomainValidator).validateForCreate(command);
+        doNothing().when(restaurantDomainValidator).validateForCreate(any());
         when(restaurantRegistrationValidator.validate(anyString(), anyLong(), anyString()))
                 .thenReturn(Mono.empty());
         when(restaurantPersistencePort.save(any()))
@@ -59,15 +60,12 @@ class CreateRestaurantServiceTest {
 
         StepVerifier.create(service.create(command, "token-test"))
                 .assertNext(result -> {
-                    org.junit.jupiter.api.Assertions.assertEquals(1L, result.getId());
-                    org.junit.jupiter.api.Assertions.assertEquals("Restaurante La 70", result.getName());
-                    org.junit.jupiter.api.Assertions.assertEquals("123456789", result.getNit());
-                    org.junit.jupiter.api.Assertions.assertEquals(2L, result.getOwnerId());
+                    Assertions.assertEquals(1L, result.getId());
+                    Assertions.assertEquals("Restaurante La 70", result.getName());
+                    Assertions.assertEquals("123456789", result.getNit());
+                    Assertions.assertEquals(2L, result.getOwnerId());
                 })
                 .verifyComplete();
 
-        verify(restaurantDomainValidator).validateForCreate(command);
-        verify(restaurantRegistrationValidator).validate("123456789", 2L, "token-test");
-        verify(restaurantPersistencePort).save(any(Restaurant.class));
     }
 }

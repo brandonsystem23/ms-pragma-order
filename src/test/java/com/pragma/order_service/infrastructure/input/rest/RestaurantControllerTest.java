@@ -49,8 +49,7 @@ class RestaurantControllerTest {
                 .build();
 
 
-        when(restaurantApplicationService.create(any(), anyString()))
-                    .thenReturn(Mono.just(response));
+        when(restaurantApplicationService.create(any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(restaurantController.create("Bearer token-test", request))
                 .assertNext(result -> {

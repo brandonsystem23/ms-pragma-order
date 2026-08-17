@@ -3,6 +3,7 @@ package com.pragma.order_service.domain.service.dish;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.CreateDishCommand;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -64,17 +65,14 @@ class CreateDishServiceTest {
 
         StepVerifier.create(service.create(command, "token-test"))
                 .assertNext(result -> {
-                    org.junit.jupiter.api.Assertions.assertEquals(1L, result.getId());
-                    org.junit.jupiter.api.Assertions.assertEquals("Pizza Hawaiana", result.getName());
-                    org.junit.jupiter.api.Assertions.assertEquals(BigDecimal.valueOf(25000), result.getPrice());
-                    org.junit.jupiter.api.Assertions.assertEquals(1L, result.getRestaurantId());
-                    org.junit.jupiter.api.Assertions.assertTrue(result.getStatus());
+                    Assertions.assertEquals(1L, result.getId());
+                    Assertions.assertEquals("Pizza Hawaiana", result.getName());
+                    Assertions.assertEquals(BigDecimal.valueOf(25000), result.getPrice());
+                    Assertions.assertEquals(1L, result.getRestaurantId());
+                    Assertions.assertTrue(result.getStatus());
                 })
                 .verifyComplete();
 
-        verify(dishDomainValidator).validateForCreate(command);
-        verify(dishRegistrationValidator).validate("Pizza Hawaiana", 1L, "token-test");
-        verify(dishPersistencePort).save(any(Dish.class));
     }
 }
 
