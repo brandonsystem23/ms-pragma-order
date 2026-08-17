@@ -6,6 +6,7 @@ import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -82,14 +83,12 @@ class RestaurantApplicationServiceTest {
         when(restaurantDtoMapper.toResponse(any())).thenReturn(restaurantResponse);
         when(restaurantDtoMapper.toCommand(any())).thenReturn(command);
 
-        Mono<RestaurantResponse> result = restaurantApplicationService.create(request, "token-test");
-
-        StepVerifier.create(result)
+        StepVerifier.create(restaurantApplicationService.create(request, "token-test"))
                 .assertNext(response -> {
-                    org.junit.jupiter.api.Assertions.assertEquals(1L, response.id());
-                    org.junit.jupiter.api.Assertions.assertEquals("Restaurante La 70", response.name());
-                    org.junit.jupiter.api.Assertions.assertEquals("123456789", response.nit());
-                    org.junit.jupiter.api.Assertions.assertEquals(2L, response.ownerId());
+                    Assertions.assertEquals(1L, response.id());
+                    Assertions.assertEquals("Restaurante La 70", response.name());
+                    Assertions.assertEquals("123456789", response.nit());
+                    Assertions.assertEquals(2L, response.ownerId());
                 })
                 .verifyComplete();
     }

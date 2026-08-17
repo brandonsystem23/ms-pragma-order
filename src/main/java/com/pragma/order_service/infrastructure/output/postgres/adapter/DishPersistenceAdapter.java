@@ -26,4 +26,9 @@ public class DishPersistenceAdapter implements DishPersistencePort {
                 .map(dishEntityMapper::toDomain);
     }
 
+    @Override
+    public Mono<Dish> findById(Long dishId) {
+        return dishRepository.findByIdAndStatusTrue(dishId)
+                .map(dishEntityMapper::toDomain);
+    }
 }

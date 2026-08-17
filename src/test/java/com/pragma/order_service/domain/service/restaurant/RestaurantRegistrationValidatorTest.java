@@ -6,6 +6,7 @@ import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -64,8 +65,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "bad-token"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("Token inválido o expirado", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("Token inválido o expirado", error.getMessage());
                 })
                 .verify();
     }
@@ -83,8 +84,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("No tienes permisos para crear restaurantes", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("No tienes permisos para crear restaurantes", error.getMessage());
                 })
                 .verify();
     }
@@ -102,8 +103,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("El NIT ya está registrado", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El NIT ya está registrado", error.getMessage());
                 })
                 .verify();
     }
@@ -121,8 +122,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("El propietario no existe", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El propietario no existe", error.getMessage());
                 })
                 .verify();
     }
@@ -146,8 +147,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("El propietario no existe", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El propietario no existe", error.getMessage());
                 })
                 .verify();
     }
@@ -171,8 +172,8 @@ class RestaurantRegistrationValidatorTest {
 
         StepVerifier.create(validator.validate("123456789", 2L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    org.junit.jupiter.api.Assertions.assertInstanceOf(DomainException.class, error);
-                    org.junit.jupiter.api.Assertions.assertEquals("El usuario indicado no tiene rol PROPIETARIO", error.getMessage());
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El usuario indicado no tiene rol PROPIETARIO", error.getMessage());
                 })
                 .verify();
     }

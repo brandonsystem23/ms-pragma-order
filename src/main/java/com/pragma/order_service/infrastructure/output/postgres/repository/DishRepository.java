@@ -8,4 +8,6 @@ public interface DishRepository extends ReactiveCrudRepository<DishEntity, Long>
 
     Mono<Boolean> existsByNameIgnoreCase(String name);
 
+    Mono<DishEntity> findByIdAndStatusTrue(Long id);
+
 }

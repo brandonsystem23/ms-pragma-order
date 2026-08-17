@@ -8,4 +8,6 @@ public interface DishPersistencePort {
     Mono<Boolean> existsByName(String name);
 
     Mono<Dish> save(Dish dish);
+
+    Mono<Dish> findById(Long dishId);
 }

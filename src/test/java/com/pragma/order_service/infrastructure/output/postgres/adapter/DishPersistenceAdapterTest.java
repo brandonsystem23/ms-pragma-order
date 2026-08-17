@@ -16,6 +16,7 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +58,7 @@ class DishPersistenceAdapterTest {
         DishEntity entity = DishEntity.builder()
                 .id(1L)
                 .name("Pizza Hawaiana")
-                .price(25000)
+                .price(BigDecimal.valueOf(12))
                 .description("Pizza con piña y jamón")
                 .urlImage("https://image.com/pizza.png")
                 .category("PIZZA")
@@ -82,4 +83,40 @@ class DishPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldFindDishByIdSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        DishEntity entity = DishEntity.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(15))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        when(dishRepository.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.just(entity));
+        when(dishEntityMapper.toDomain(any())).thenReturn(dish);
+
+        StepVerifier.create(dishPersistenceAdapter.findById(1L))
+                .assertNext(found -> {
+                    Assertions.assertEquals(1L, found.getId());
+                    Assertions.assertEquals("Pizza Hawaiana", found.getName());
+                })
+                .verifyComplete();
+    }
+
 }

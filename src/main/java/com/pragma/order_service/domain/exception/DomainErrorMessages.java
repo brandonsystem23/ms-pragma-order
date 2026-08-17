@@ -40,6 +40,11 @@ public final class DomainErrorMessages {
     public static final String INVALID_TOKEN = "Token inválido o expirado";
     public static final String RESTAURANT_ACCESS_DENIED = "No tienes permisos para crear restaurantes";
 
+    public static final String DISH_NOT_FOUND = "El plato no existe";
+    public static final String DISH_ID_REQUIRED = "El campo dishId es obligatorio";
+    public static final String DISH_UPDATE_FIELDS_REQUIRED = "Debe enviar al menos uno de los campos: price o description";
+
+
     private DomainErrorMessages() {
     }
 }

@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         return switch (code) {
             case VALIDATION_ERROR, DUPLICATE_NIT, DUPLICATE_NAME -> HttpStatus.BAD_REQUEST;
             case INVALID_TOKEN -> HttpStatus.UNAUTHORIZED;
-            case OWNER_NOT_FOUND, RESTAURANT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case OWNER_NOT_FOUND, RESTAURANT_NOT_FOUND, DISH_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case INVALID_OWNER_ROLE, ACCESS_DENIED, INVALID_OWNER_RESTAURANT -> HttpStatus.FORBIDDEN;
             case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
