@@ -34,4 +34,13 @@ public class DishApplicationService {
                 )
                 .map(dishDtoMapper::toResponse);
     }
+
+    public Mono<DishResponse> updateStatus(Long dishId,Boolean status, String token) {
+        return updateDishUseCase.updateStatus(
+                        dishId,
+                        status,
+                        token
+                )
+                .map(dishDtoMapper::toResponse);
+    }
 }

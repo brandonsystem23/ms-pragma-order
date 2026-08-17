@@ -9,5 +9,8 @@ public interface DishPersistencePort {
 
     Mono<Dish> save(Dish dish);
 
+    Mono<Dish> findByIdAndStatusTrue(Long dishId);
+
     Mono<Dish> findById(Long dishId);
+
 }

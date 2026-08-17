@@ -19,7 +19,7 @@ public class UpdateDishService implements UpdateDishUseCase {
         return Mono.defer(() -> {
             updateDishDomainValidator.validateForUpdate(dishId, command);
 
-            return updateDishRegistrationValidator.validate(dishId, token)
+            return updateDishRegistrationValidator.validate(dishId, token, null)
                     .flatMap(existingDish -> {
                         if (command.price() != null) {
                             existingDish.setPrice(command.price());
@@ -28,6 +28,21 @@ public class UpdateDishService implements UpdateDishUseCase {
                         if (command.description() != null && !command.description().trim().isEmpty()) {
                             existingDish.setDescription(command.description());
                         }
+
+                        return dishPersistencePort.save(existingDish);
+                    });
+        });
+    }
+
+    @Override
+    public Mono<Dish> updateStatus(Long dishId, Boolean status, String token) {
+        return Mono.defer(() -> {
+            updateDishDomainValidator.validateForUpdateStatus(dishId, status);
+
+            return updateDishRegistrationValidator.validate(dishId, token, status)
+                    .flatMap(existingDish -> {
+
+                        existingDish.setStatus(status);
 
                         return dishPersistencePort.save(existingDish);
                     });

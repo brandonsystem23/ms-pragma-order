@@ -11,6 +11,11 @@ import java.math.BigDecimal;
 
 public class UpdateDishDomainValidator {
 
+    public void validateForUpdateStatus(Long dishId, Boolean status) {
+        validateDishId(dishId);
+        validateStatus(status);
+    }
+
     public void validateForUpdate(Long dishId, UpdateDishCommand command) {
         validateDishId(dishId);
         validateAtLeastOneField(command);
@@ -33,6 +38,14 @@ public class UpdateDishDomainValidator {
         }
     }
 
+    private void validateStatus(Boolean status) {
+        if (status == null) {
+            throw new DomainException(
+                    DomainErrorCode.VALIDATION_ERROR,
+                    DomainErrorMessages.DISH_STATUS_REQUIRED
+            );
+        }
+    }
     private void validateAtLeastOneField(UpdateDishCommand command) {
         boolean priceMissing = command.price() == null;
         boolean descriptionMissing = ValidationUtils.isBlank(command.description());
