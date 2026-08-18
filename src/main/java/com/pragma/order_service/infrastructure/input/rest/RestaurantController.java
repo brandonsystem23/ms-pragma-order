@@ -1,6 +1,8 @@
 package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
+import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.service.RestaurantApplicationService;
 import com.pragma.order_service.infrastructure.util.TokenExtractor;
@@ -29,5 +31,17 @@ public class RestaurantController {
     ) {
         String token = TokenExtractor.extract(authorizationHeader);
         return restaurantApplicationService.create(request, token);
+    }
+
+    @GetMapping("/list")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Listar restaurantes", description = "Lista restaurantes activos en orden alfabético y paginados. Requiere rol CLIENTE")
+    public Mono<PagedResponse<RestaurantListItemResponse>> list(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return restaurantApplicationService.list(token, page, size);
     }
 }
