@@ -4,6 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record RestaurantListItemResponse(
+        Long id,
         String name,
         String urlLogo
 ) {

@@ -4,6 +4,8 @@ import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.UpdateDishCommand;
 import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
+import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainValidator;
+import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 

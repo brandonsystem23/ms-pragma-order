@@ -17,11 +17,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.domain.port.in.ListDishesUseCase;
+import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -37,6 +41,10 @@ class DishApplicationServiceTest {
 
     @Mock
     private DishDtoMapper dishDtoMapper;
+
+    @Mock
+    private ListDishesUseCase listDishesUseCase;
+
 
     @InjectMocks
     private DishApplicationService dishApplicationService;
@@ -202,5 +210,42 @@ class DishApplicationServiceTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldListDishesByRestaurantSuccessfully() {
+        PagedResponse<DishResponse> pagedResponse = PagedResponse.<DishResponse>builder()
+                .content(List.of(
+                        DishResponse.builder()
+                                .id(1L)
+                                .name("Pizza Hawaiana")
+                                .price(BigDecimal.valueOf(25000))
+                                .description("Pizza con piña y jamón")
+                                .urlImage("https://image.com/pizza.png")
+                                .category("PIZZA")
+                                .status(true)
+                                .restaurantId(1L)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build()
+                ))
+                .page(0)
+                .size(10)
+                .totalElements(1L)
+                .totalPages(1)
+                .build();
+
+        when(listDishesUseCase.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
+                .thenReturn(Mono.just(pagedResponse));
+
+        StepVerifier.create(dishApplicationService.listByRestaurant(1L, "PIZZA", 0, 10, "token-test"))
+                .assertNext(response -> {
+                    Assertions.assertEquals(1, response.content().size());
+                    Assertions.assertEquals("Pizza Hawaiana", response.content().get(0).name());
+                    Assertions.assertEquals(1L, response.totalElements());
+                    Assertions.assertEquals(1, response.totalPages());
+                })
+                .verifyComplete();
+    }
+
 
 }

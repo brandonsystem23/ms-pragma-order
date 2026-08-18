@@ -3,6 +3,8 @@ package com.pragma.order_service.domain.service.restaurant;
 import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRetrieveValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,7 @@ import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,6 +28,9 @@ class ListRestaurantsServiceTest {
 
     @Mock
     private RestaurantRetrieveValidator restaurantRetrieveValidator;
+
+    @Mock
+    private ListRestaurantsDomainValidator listRestaurantsDomainValidator;
 
     @InjectMocks
     private ListRestaurantsService service;
@@ -46,10 +52,12 @@ class ListRestaurantsServiceTest {
                 .build();
 
         when(restaurantRetrieveValidator.validate(anyString())).thenReturn(Mono.empty());
+        doNothing().when(listRestaurantsDomainValidator).validate(anyInt(), anyInt());
         when(restaurantPersistencePort.findActiveRestaurantsOrdered(anyInt(), anyInt()))
                 .thenReturn(Flux.just(restaurant1, restaurant2));
         when(restaurantPersistencePort.countActiveRestaurants())
                 .thenReturn(Mono.just(2L));
+
 
         StepVerifier.create(service.list("token-test", 0, 10))
                 .assertNext(response -> {
@@ -68,6 +76,7 @@ class ListRestaurantsServiceTest {
 
     @Test
     void shouldReturnEmptyPageWhenNoRestaurantsExist() {
+        doNothing().when(listRestaurantsDomainValidator).validate(anyInt(), anyInt());
         when(restaurantRetrieveValidator.validate(anyString())).thenReturn(Mono.empty());
         when(restaurantPersistencePort.findActiveRestaurantsOrdered(anyInt(), anyInt()))
                 .thenReturn(Flux.empty());

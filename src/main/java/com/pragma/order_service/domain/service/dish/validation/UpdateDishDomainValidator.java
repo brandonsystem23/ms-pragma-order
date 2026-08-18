@@ -1,4 +1,4 @@
-package com.pragma.order_service.domain.service.dish;
+package com.pragma.order_service.domain.service.dish.validation;
 
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;

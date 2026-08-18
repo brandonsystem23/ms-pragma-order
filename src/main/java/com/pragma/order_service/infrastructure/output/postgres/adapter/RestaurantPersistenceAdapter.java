@@ -39,7 +39,8 @@ public class RestaurantPersistenceAdapter implements RestaurantPersistencePort {
 
     @Override
     public Flux<Restaurant> findActiveRestaurantsOrdered(int page, int size) {
-        return restaurantRepository.findActiveRestaurantsOrdered(size, page)
+        int offset = page * size;
+        return restaurantRepository.findActiveRestaurantsOrdered(size, offset)
                 .map(restaurantEntityMapper::toDomain);
     }
 

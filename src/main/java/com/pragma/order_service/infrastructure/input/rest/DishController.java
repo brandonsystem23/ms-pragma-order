@@ -3,6 +3,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 import com.pragma.order_service.application.dto.request.CreateDishRequest;
 import com.pragma.order_service.application.dto.request.UpdateDishRequest;
 import com.pragma.order_service.application.dto.response.DishResponse;
+import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.service.DishApplicationService;
 import com.pragma.order_service.infrastructure.util.TokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,5 +55,19 @@ public class DishController {
     ) {
         String token = TokenExtractor.extract(authorizationHeader);
         return dishApplicationService.updateStatus(dishId, status, token);
+    }
+
+    @GetMapping("/restaurant/{restaurantId}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Listar platos", description = "Lista los platos de un restaurante. Requiere rol CLIENTE")
+    public Mono<PagedResponse<DishResponse>> listByRestaurant(
+            @PathVariable Long restaurantId,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return dishApplicationService.listByRestaurant(restaurantId, category, page, size, token);
     }
 }
