@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.configuration;
 
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
@@ -14,6 +15,8 @@ import com.pragma.order_service.domain.service.dish.UpdateDishDomainValidator;
 import com.pragma.order_service.domain.service.dish.UpdateDishRegistrationValidator;
 import com.pragma.order_service.domain.service.dish.UpdateDishService;
 import com.pragma.order_service.domain.service.restaurant.CreateRestaurantService;
+import com.pragma.order_service.domain.service.restaurant.ListRestaurantsService;
+import com.pragma.order_service.domain.service.restaurant.RestaurantRetrieveValidator;
 import com.pragma.order_service.domain.service.restaurant.RestaurantDomainValidator;
 import com.pragma.order_service.domain.service.restaurant.RestaurantRegistrationValidator;
 import org.springframework.context.annotation.Bean;
@@ -50,6 +53,24 @@ public class BeanConfiguration {
                 restaurantPersistencePort,
                 restaurantRegistrationValidator,
                 restaurantDomainValidator
+        );
+    }
+
+    @Bean
+    public RestaurantRetrieveValidator restaurantRetrieveValidator(
+            AuthSessionPort authSessionPort
+    ) {
+        return new RestaurantRetrieveValidator(authSessionPort);
+    }
+
+    @Bean
+    public ListRestaurantsUseCase listRestaurantsUseCase(
+            RestaurantPersistencePort restaurantPersistencePort,
+            RestaurantRetrieveValidator restaurantClientAccessValidator
+    ) {
+        return new ListRestaurantsService(
+                restaurantPersistencePort,
+                restaurantClientAccessValidator
         );
     }
 

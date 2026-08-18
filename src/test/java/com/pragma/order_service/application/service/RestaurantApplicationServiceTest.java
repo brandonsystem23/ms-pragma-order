@@ -1,11 +1,14 @@
 package com.pragma.order_service.application.service;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
+import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,9 +19,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +29,9 @@ class RestaurantApplicationServiceTest {
 
     @Mock
     private CreateRestaurantUseCase createRestaurantUseCase;
+
+    @Mock
+    private ListRestaurantsUseCase listRestaurantsUseCase;
 
     @Mock
     private RestaurantDtoMapper restaurantDtoMapper;
@@ -61,6 +67,7 @@ class RestaurantApplicationServiceTest {
                 .phone("+573005698325")
                 .urlLogo("https://logo.com/logo.png")
                 .ownerId(2L)
+                .status(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -73,6 +80,7 @@ class RestaurantApplicationServiceTest {
                 .phone("+573005698325")
                 .urlLogo("https://logo.com/logo.png")
                 .ownerId(2L)
+                .status(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -89,6 +97,34 @@ class RestaurantApplicationServiceTest {
                     Assertions.assertEquals("Restaurante La 70", response.name());
                     Assertions.assertEquals("123456789", response.nit());
                     Assertions.assertEquals(2L, response.ownerId());
+                    Assertions.assertTrue(response.status());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldListRestaurantsSuccessfully() {
+        PagedResponse<RestaurantListItemResponse> pagedResponse = PagedResponse.<RestaurantListItemResponse>builder()
+                .content(List.of(
+                        RestaurantListItemResponse.builder()
+                                .name("Burger House")
+                                .urlLogo("https://logo.com/burger.png")
+                                .build()
+                ))
+                .page(0)
+                .size(10)
+                .totalElements(1L)
+                .totalPages(1)
+                .build();
+
+        when(listRestaurantsUseCase.list(anyString(), anyInt(), anyInt()))
+                .thenReturn(Mono.just(pagedResponse));
+
+        StepVerifier.create(restaurantApplicationService.list("token-test", 0, 10))
+                .assertNext(response -> {
+                    Assertions.assertEquals(1, response.content().size());
+                    Assertions.assertEquals("Burger House", response.content().get(0).name());
+                    Assertions.assertEquals(1L, response.totalElements());
                 })
                 .verifyComplete();
     }

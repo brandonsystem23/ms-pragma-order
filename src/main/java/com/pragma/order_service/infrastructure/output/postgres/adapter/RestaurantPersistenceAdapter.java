@@ -6,6 +6,7 @@ import com.pragma.order_service.infrastructure.output.postgres.mapper.Restaurant
 import com.pragma.order_service.infrastructure.output.postgres.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -34,5 +35,16 @@ public class RestaurantPersistenceAdapter implements RestaurantPersistencePort {
     @Override
     public Mono<Boolean> existById(Long restaurantId) {
         return restaurantRepository.existsById(restaurantId);
+    }
+
+    @Override
+    public Flux<Restaurant> findActiveRestaurantsOrdered(int page, int size) {
+        return restaurantRepository.findActiveRestaurantsOrdered(size, page)
+                .map(restaurantEntityMapper::toDomain);
+    }
+
+    @Override
+    public Mono<Long> countActiveRestaurants() {
+        return restaurantRepository.countActiveRestaurants();
     }
 }

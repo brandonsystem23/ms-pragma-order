@@ -32,6 +32,7 @@ public class CreateRestaurantService implements CreateRestaurantUseCase {
                                 .phone(command.phone())
                                 .urlLogo(command.urlLogo())
                                 .ownerId(command.ownerId())
+                                .status(true)
                                 .build();
 
                         return restaurantPersistencePort.save(restaurant);

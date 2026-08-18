@@ -14,6 +14,7 @@ public record RestaurantResponse(
         String phone,
         String urlLogo,
         Long ownerId,
+        Boolean status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

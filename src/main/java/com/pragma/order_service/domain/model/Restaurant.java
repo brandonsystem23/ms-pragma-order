@@ -27,6 +27,8 @@ public class Restaurant {
 
     private Long ownerId;
 
+    private Boolean status;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

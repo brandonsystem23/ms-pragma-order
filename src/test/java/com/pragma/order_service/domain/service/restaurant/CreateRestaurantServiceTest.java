@@ -13,7 +13,10 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CreateRestaurantServiceTest {
@@ -29,7 +32,6 @@ class CreateRestaurantServiceTest {
 
     @InjectMocks
     private CreateRestaurantService service;
-
 
     @Test
     void shouldCreateRestaurantSuccessfully() {
@@ -50,6 +52,7 @@ class CreateRestaurantServiceTest {
                 .phone(command.phone())
                 .urlLogo(command.urlLogo())
                 .ownerId(command.ownerId())
+                .status(true)
                 .build();
 
         doNothing().when(restaurantDomainValidator).validateForCreate(any());
@@ -64,8 +67,8 @@ class CreateRestaurantServiceTest {
                     Assertions.assertEquals("Restaurante La 70", result.getName());
                     Assertions.assertEquals("123456789", result.getNit());
                     Assertions.assertEquals(2L, result.getOwnerId());
+                    Assertions.assertTrue(result.getStatus());
                 })
                 .verifyComplete();
-
     }
 }

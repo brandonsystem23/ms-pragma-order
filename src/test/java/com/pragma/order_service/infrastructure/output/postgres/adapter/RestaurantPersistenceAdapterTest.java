@@ -10,10 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +51,7 @@ class RestaurantPersistenceAdapterTest {
                 .phone("+573005698325")
                 .urlLogo("https://logo.com/logo.png")
                 .ownerId(2L)
+                .status(true)
                 .build();
 
         RestaurantEntity entity = RestaurantEntity.builder()
@@ -59,6 +62,7 @@ class RestaurantPersistenceAdapterTest {
                 .phone("+573005698325")
                 .urlLogo("https://logo.com/logo.png")
                 .ownerId(2L)
+                .status(true)
                 .build();
 
         when(restaurantRepository.save(any()))
@@ -74,6 +78,7 @@ class RestaurantPersistenceAdapterTest {
                 .assertNext(saved -> {
                     Assertions.assertEquals(1L, saved.getId());
                     Assertions.assertEquals("Restaurante La 70", saved.getName());
+                    Assertions.assertTrue(saved.getStatus());
                 })
                 .verifyComplete();
     }
@@ -98,4 +103,56 @@ class RestaurantPersistenceAdapterTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldFindActiveRestaurantsOrdered() {
+        RestaurantEntity entity1 = RestaurantEntity.builder()
+                .id(1L)
+                .name("Burger House")
+                .urlLogo("https://logo.com/burger.png")
+                .status(true)
+                .build();
+
+        RestaurantEntity entity2 = RestaurantEntity.builder()
+                .id(2L)
+                .name("Pizza Place")
+                .urlLogo("https://logo.com/pizza.png")
+                .status(true)
+                .build();
+
+        Restaurant restaurant1 = Restaurant.builder()
+                .id(1L)
+                .name("Burger House")
+                .urlLogo("https://logo.com/burger.png")
+                .status(true)
+                .build();
+
+        Restaurant restaurant2 = Restaurant.builder()
+                .id(2L)
+                .name("Pizza Place")
+                .urlLogo("https://logo.com/pizza.png")
+                .status(true)
+                .build();
+
+        when(restaurantRepository.findActiveRestaurantsOrdered(anyInt(), anyInt())).thenReturn(Flux.just(entity1, entity2));
+        when(restaurantEntityMapper.toDomain(entity1)).thenReturn(restaurant1);
+        when(restaurantEntityMapper.toDomain(entity2)).thenReturn(restaurant2);
+
+        StepVerifier.create(restaurantPersistenceAdapter.findActiveRestaurantsOrdered(0, 10))
+                .assertNext(found -> {
+                    Assertions.assertEquals("Burger House", found.getName());
+                })
+                .assertNext(found -> {
+                    Assertions.assertEquals("Pizza Place", found.getName());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldCountActiveRestaurants() {
+        when(restaurantRepository.countActiveRestaurants()).thenReturn(Mono.just(2L));
+
+        StepVerifier.create(restaurantPersistenceAdapter.countActiveRestaurants())
+                .expectNext(2L)
+                .verifyComplete();
+    }
 }

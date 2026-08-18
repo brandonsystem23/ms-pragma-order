@@ -34,6 +34,8 @@ public class RestaurantEntity {
     @Column("owner_id")
     private Long ownerId;
 
+    private Boolean status;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 
