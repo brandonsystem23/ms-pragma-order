@@ -1,4 +1,4 @@
-package com.pragma.order_service.domain.service.restaurant;
+package com.pragma.order_service.domain.service.restaurant.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.UserSummary;

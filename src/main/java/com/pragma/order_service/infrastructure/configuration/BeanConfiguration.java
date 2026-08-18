@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.configuration;
 
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import com.pragma.order_service.domain.port.in.ListDishesUseCase;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
@@ -9,16 +10,20 @@ import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
-import com.pragma.order_service.domain.service.dish.DishDomainValidator;
-import com.pragma.order_service.domain.service.dish.DishRegistrationValidator;
-import com.pragma.order_service.domain.service.dish.UpdateDishDomainValidator;
-import com.pragma.order_service.domain.service.dish.UpdateDishRegistrationValidator;
+import com.pragma.order_service.domain.service.dish.validation.DishDomainValidator;
+import com.pragma.order_service.domain.service.dish.validation.DishRegistrationValidator;
+import com.pragma.order_service.domain.service.dish.validation.DishRetrieveValidator;
+import com.pragma.order_service.domain.service.dish.validation.ListDishesDomainValidator;
+import com.pragma.order_service.domain.service.dish.ListDishesService;
+import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainValidator;
+import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
 import com.pragma.order_service.domain.service.dish.UpdateDishService;
 import com.pragma.order_service.domain.service.restaurant.CreateRestaurantService;
 import com.pragma.order_service.domain.service.restaurant.ListRestaurantsService;
-import com.pragma.order_service.domain.service.restaurant.RestaurantRetrieveValidator;
-import com.pragma.order_service.domain.service.restaurant.RestaurantDomainValidator;
-import com.pragma.order_service.domain.service.restaurant.RestaurantRegistrationValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRetrieveValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantDomainValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRegistrationValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -66,12 +71,19 @@ public class BeanConfiguration {
     @Bean
     public ListRestaurantsUseCase listRestaurantsUseCase(
             RestaurantPersistencePort restaurantPersistencePort,
-            RestaurantRetrieveValidator restaurantClientAccessValidator
+            RestaurantRetrieveValidator restaurantClientAccessValidator,
+            ListRestaurantsDomainValidator listRestaurantsDomainValidator
     ) {
         return new ListRestaurantsService(
                 restaurantPersistencePort,
-                restaurantClientAccessValidator
+                restaurantClientAccessValidator,
+                listRestaurantsDomainValidator
         );
+    }
+
+    @Bean
+    public ListRestaurantsDomainValidator listRestaurantsDomainValidator() {
+        return new ListRestaurantsDomainValidator();
     }
 
     @Bean
@@ -136,4 +148,32 @@ public class BeanConfiguration {
                 updateDishDomainValidator
         );
     }
+
+    @Bean
+    public DishRetrieveValidator dishRetrieveValidator(
+            RestaurantPersistencePort restaurantPersistencePort,
+            AuthSessionPort authSessionPort
+
+    ) {
+        return new DishRetrieveValidator(restaurantPersistencePort, authSessionPort);
+    }
+
+    @Bean
+    public ListDishesDomainValidator listDishesDomainValidator() {
+        return new ListDishesDomainValidator();
+    }
+
+    @Bean
+    public ListDishesUseCase listDishesUseCase(
+            DishPersistencePort dishPersistencePort,
+            DishRetrieveValidator dishRetrieveValidator,
+            ListDishesDomainValidator listDishesDomainValidator
+    ) {
+        return new ListDishesService(
+                dishPersistencePort,
+                dishRetrieveValidator,
+                listDishesDomainValidator
+        );
+    }
+
 }

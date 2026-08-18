@@ -4,6 +4,8 @@ import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantDomainValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRegistrationValidator;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 

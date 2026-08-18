@@ -36,6 +36,7 @@ public final class DomainErrorMessages {
     public static final String RESTAURANT_NOT_FOUND = "El restaurante no existe";
     public static final String INVALID_RESTAURANT = "Usted no es propietario del restaurante";
     public static final String DISH_ACCESS_DENIED = "No tienes permisos para crear platos";
+    public static final String DISH_LIST_ACCESS_DENIED = "No tienes permisos para listar platos";
 
     public static final String INVALID_TOKEN = "Token inválido o expirado";
     public static final String RESTAURANT_ACCESS_DENIED = "No tienes permisos para crear restaurantes";
@@ -45,6 +46,11 @@ public final class DomainErrorMessages {
     public static final String DISH_ID_REQUIRED = "El campo dishId es obligatorio";
     public static final String DISH_UPDATE_FIELDS_REQUIRED = "Debe enviar al menos uno de los campos: price o description";
     public static final String DISH_STATUS_REQUIRED = "El campo status es obligatorio";
+
+    public static final String PAGE_INVALID = "El parámetro page debe ser mayor o igual a 0";
+    public static final String SIZE_INVALID = "El parámetro size debe ser mayor a 0";
+    public static final String CATEGORY_INVALID = "El parámetro category no puede estar vacío";
+
 
     private DomainErrorMessages() {
     }

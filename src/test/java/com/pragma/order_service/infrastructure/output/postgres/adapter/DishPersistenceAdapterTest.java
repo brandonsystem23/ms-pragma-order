@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -153,5 +154,95 @@ class DishPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldFindActiveDishesByRestaurantSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        DishEntity entity = DishEntity.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        when(dishRepository.findActiveByRestaurantId(1L, 10, 0)).thenReturn(Flux.just(entity));
+        when(dishEntityMapper.toDomain(entity)).thenReturn(dish);
+
+        StepVerifier.create(dishPersistenceAdapter.findActiveByRestaurantId(1L, 0, 10))
+                .assertNext(found -> {
+                    Assertions.assertEquals(1L, found.getId());
+                    Assertions.assertEquals("Pizza Hawaiana", found.getName());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindActiveDishesByRestaurantAndCategorySuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        DishEntity entity = DishEntity.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        when(dishRepository.findActiveByRestaurantIdAndCategory(1L, "PIZZA", 10, 0))
+                .thenReturn(Flux.just(entity));
+        when(dishEntityMapper.toDomain(entity)).thenReturn(dish);
+
+        StepVerifier.create(dishPersistenceAdapter.findActiveByRestaurantIdAndCategory(1L, "PIZZA", 0, 10))
+                .assertNext(found -> {
+                    Assertions.assertEquals(1L, found.getId());
+                    Assertions.assertEquals("PIZZA", found.getCategory());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldCountActiveDishesByRestaurantSuccessfully() {
+        when(dishRepository.countActiveByRestaurantId(1L)).thenReturn(Mono.just(2L));
+
+        StepVerifier.create(dishPersistenceAdapter.countActiveByRestaurantId(1L))
+                .expectNext(2L)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldCountActiveDishesByRestaurantAndCategorySuccessfully() {
+        when(dishRepository.countActiveByRestaurantIdAndCategory(1L, "PIZZA")).thenReturn(Mono.just(1L));
+
+        StepVerifier.create(dishPersistenceAdapter.countActiveByRestaurantIdAndCategory(1L, "PIZZA"))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
 
 }

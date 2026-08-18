@@ -3,6 +3,8 @@ package com.pragma.order_service.domain.service.restaurant;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantDomainValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRegistrationValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
