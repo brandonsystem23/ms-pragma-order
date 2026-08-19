@@ -5,6 +5,7 @@ import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
+import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
@@ -20,12 +21,30 @@ import java.util.List;
 public class OrderApplicationService {
 
     private final CreateOrderUseCase createOrderUseCase;
+    private final AssignOrderUseCase assignOrderUseCase;
     private final OrderDtoMapper orderDtoMapper;
     private final OrderPersistencePort orderPersistencePort;
     private final ListOrdersUseCase listOrdersUseCase;
 
     public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
         return createOrderUseCase.create(orderDtoMapper.toCommand(request), token)
+                .flatMap(savedOrder ->
+                        orderPersistencePort.findOrderDetailById(savedOrder.getId())
+                                .collectList()
+                )
+                .map(listOrderSummary -> {
+                    OrderSummary orderSummary = listOrderSummary.getFirst();
+
+                    List<OrderItemResponse> items = listOrderSummary.stream()
+                            .map(orderDtoMapper::toItemResponse)
+                            .toList();
+
+                    return orderDtoMapper.toResponse(orderSummary, items);
+                });
+    }
+
+    public Mono<OrderResponse> assign(Long orderId, String token) {
+        return assignOrderUseCase.assign(orderId, token)
                 .flatMap(savedOrder ->
                         orderPersistencePort.findOrderDetailById(savedOrder.getId())
                                 .collectList()

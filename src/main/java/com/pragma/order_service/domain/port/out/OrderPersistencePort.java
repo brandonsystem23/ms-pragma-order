@@ -13,6 +13,8 @@ public interface OrderPersistencePort {
 
     Mono<Order> save(Order order);
 
+    Mono<Order> findById(Long orderId);
+
     Flux<OrderSummary> findOrderDetailById(Long orderId);
 
     Mono<Long> countOrdersByRestaurantIdAndStatus(Long restaurantId, String status);

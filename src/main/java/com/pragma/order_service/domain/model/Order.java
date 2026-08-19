@@ -20,6 +20,8 @@ public class Order {
 
     private Long restaurantId;
 
+    private Long employeeAssignedId;
+
     private String status;
 
     private List<OrderItem> items;

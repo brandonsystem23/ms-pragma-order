@@ -15,15 +15,16 @@ public interface OrderDtoMapper {
 
     CreateOrderCommand toCommand(CreateOrderRequest request);
 
-    @Mapping(target = "id", source = "orderSummary.orderId" )
-    @Mapping(target = "customerId", source = "orderSummary.customerId" )
-    @Mapping(target = "nameCustomer", source = "orderSummary.customerName" )
-    @Mapping(target = "restaurantId", source = "orderSummary.restaurantId" )
-    @Mapping(target = "nameRestaurant", source = "orderSummary.restaurantName" )
-    @Mapping(target = "status", source = "orderSummary.status" )
-    @Mapping(target = "items", source = "items" )
-    @Mapping(target = "createdAt", source = "orderSummary.createdAt" )
-    @Mapping(target = "updatedAt", source = "orderSummary.updatedAt" )
+    @Mapping(target = "id", source = "orderSummary.orderId")
+    @Mapping(target = "customerId", source = "orderSummary.customerId")
+    @Mapping(target = "nameCustomer", source = "orderSummary.customerName")
+    @Mapping(target = "restaurantId", source = "orderSummary.restaurantId")
+    @Mapping(target = "nameRestaurant", source = "orderSummary.restaurantName")
+    @Mapping(target = "status", source = "orderSummary.status")
+    @Mapping(target = "employeeAssignedId", source = "orderSummary.employeeAssignedId")
+    @Mapping(target = "items", source = "items")
+    @Mapping(target = "createdAt", source = "orderSummary.createdAt")
+    @Mapping(target = "updatedAt", source = "orderSummary.updatedAt")
     OrderResponse toResponse(OrderSummary orderSummary, List<OrderItemResponse> items);
 
     @Mapping(target = "dishId", source = "dishId")

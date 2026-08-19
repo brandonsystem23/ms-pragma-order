@@ -36,8 +36,22 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
         OrderEntity orderEntity = orderEntityMapper.toEntity(order);
 
         return orderRepository.save(orderEntity)
-                .flatMap(savedOrderEntity -> saveItems(savedOrderEntity.getId(), order.getItems())
-                        .map(savedItems -> buildOrder(savedOrderEntity, savedItems)));
+                .flatMap(savedOrderEntity -> {
+                    if (order.getId() != null) {
+                        Order savedOrder = orderEntityMapper.toDomain(savedOrderEntity);
+                        savedOrder.setItems(order.getItems());
+                        return Mono.just(savedOrder);
+                    }
+
+                    return saveItems(savedOrderEntity.getId(), order.getItems())
+                            .map(savedItems -> buildOrder(savedOrderEntity, savedItems));
+                });
+    }
+
+    @Override
+    public Mono<Order> findById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .map(orderEntityMapper::toDomain);
     }
 
     @Override

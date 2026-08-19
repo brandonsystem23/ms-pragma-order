@@ -79,6 +79,7 @@ public class ListOrdersService implements ListOrdersUseCase {
                             .restaurantId(order.getRestaurantId())
                             .nameRestaurant(order.getRestaurantName())
                             .status(order.getStatus())
+                            .employeeAssignedId(order.getEmployeeAssignedId())
                             .items(ordersSummary.stream()
                                     .map(item -> OrderItemResponse.builder()
                                             .dishId(item.getDishId())

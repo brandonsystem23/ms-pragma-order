@@ -14,6 +14,7 @@ public record OrderResponse(
         Long restaurantId,
         String nameRestaurant,
         String status,
+        Long employeeAssignedId,
         List<OrderItemResponse> items,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
