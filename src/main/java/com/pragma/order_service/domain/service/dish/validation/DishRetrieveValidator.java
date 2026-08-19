@@ -3,6 +3,7 @@ package com.pragma.order_service.domain.service.dish.validation;
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
+import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
@@ -12,7 +13,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class DishRetrieveValidator {
 
-    private static final String CLIENT_ROLE = "CLIENTE";
     private final RestaurantPersistencePort restaurantPersistencePort;
     private final AuthSessionPort authSessionPort;
 
@@ -27,7 +27,7 @@ public class DishRetrieveValidator {
     }
 
     private Mono<AuthSession> checkClientRole(AuthSession authSession) {
-        if (!CLIENT_ROLE.equals(authSession.role())) {
+        if (!RoleNames.CLIENT.equals(authSession.role())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
                     DomainErrorMessages.DISH_LIST_ACCESS_DENIED

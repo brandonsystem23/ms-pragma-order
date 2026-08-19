@@ -45,7 +45,7 @@ class RedisAuthSessionAdapterTest {
 
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         when(valueOperations.get(anyString())).thenReturn(Mono.just("{}"));
@@ -54,7 +54,7 @@ class RedisAuthSessionAdapterTest {
         StepVerifier.create(adapter.findByToken(token))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.userId());
-                    Assertions.assertEquals("ADMIN", result.role());
+                    Assertions.assertEquals("ADMINISTRADOR", result.role());
                 })
                 .verifyComplete();
     }

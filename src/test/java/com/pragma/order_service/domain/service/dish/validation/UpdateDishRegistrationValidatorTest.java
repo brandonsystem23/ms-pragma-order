@@ -108,7 +108,7 @@ class UpdateDishRegistrationValidatorTest {
     void shouldFailWhenAuthenticatedUserIsNotOwner() {
         AuthSession authSession = AuthSession.builder()
                 .userId(2L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));

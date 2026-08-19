@@ -80,6 +80,32 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void shouldHandleActiveOrderExists() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.ACTIVE_ORDER_EXISTS,
+                "El cliente ya tiene un pedido en proceso para este restaurante"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("El cliente ya tiene un pedido en proceso para este restaurante", Objects.requireNonNull(response.getBody()).message());
+    }
+
+    @Test
+    void shouldHandleInvalidOrderRestaurant() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.INVALID_ORDER_RESTAURANT,
+                "Todos los platos del pedido deben pertenecer al restaurante indicado"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("Todos los platos del pedido deben pertenecer al restaurante indicado", Objects.requireNonNull(response.getBody()).message());
+    }
+
+    @Test
     void shouldHandleIllegalArgumentException() {
         ResponseEntity<ErrorResponse> response = handler.handleIllegalArgument(
                 new IllegalArgumentException("Authorization header inválido"),

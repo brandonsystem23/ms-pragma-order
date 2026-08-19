@@ -59,7 +59,7 @@ public class UpdateDishDomainValidator {
     }
 
     private void validatePrice(BigDecimal price) {
-        if (!PriceValidator.isValid(price)) {
+        if (PriceValidator.isInvalid(price)) {
             throw new DomainException(
                     DomainErrorCode.VALIDATION_ERROR,
                     DomainErrorMessages.PRICE_INVALID

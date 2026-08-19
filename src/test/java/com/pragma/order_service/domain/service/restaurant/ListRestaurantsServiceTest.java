@@ -67,7 +67,7 @@ class ListRestaurantsServiceTest {
                     Assertions.assertEquals(2L, response.totalElements());
                     Assertions.assertEquals(1, response.totalPages());
 
-                    RestaurantListItemResponse first = response.content().get(0);
+                    RestaurantListItemResponse first = response.content().getFirst();
                     Assertions.assertEquals("Burger House", first.name());
                     Assertions.assertEquals("https://logo.com/burger.png", first.urlLogo());
                 })

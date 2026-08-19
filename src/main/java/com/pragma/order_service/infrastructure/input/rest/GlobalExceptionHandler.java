@@ -2,12 +2,13 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainException;
+import com.pragma.order_service.infrastructure.exception.ExternalServiceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
-import com.pragma.order_service.infrastructure.exception.ExternalServiceException;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -29,7 +30,6 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getStatus(), ex.getMessage(), exchange, List.of());
     }
 
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, ServerWebExchange exchange) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), exchange, List.of());
@@ -47,10 +47,22 @@ public class GlobalExceptionHandler {
 
     private HttpStatus mapStatus(DomainErrorCode code) {
         return switch (code) {
-            case VALIDATION_ERROR, DUPLICATE_NIT, DUPLICATE_NAME -> HttpStatus.BAD_REQUEST;
+            case VALIDATION_ERROR,
+                 DUPLICATE_NIT,
+                 DUPLICATE_NAME,
+                 ACTIVE_ORDER_EXISTS,
+                 INVALID_ORDER_RESTAURANT -> HttpStatus.BAD_REQUEST;
+
             case INVALID_TOKEN -> HttpStatus.UNAUTHORIZED;
-            case OWNER_NOT_FOUND, RESTAURANT_NOT_FOUND, DISH_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case INVALID_OWNER_ROLE, ACCESS_DENIED, INVALID_OWNER_RESTAURANT -> HttpStatus.FORBIDDEN;
+
+            case OWNER_NOT_FOUND,
+                 RESTAURANT_NOT_FOUND,
+                 DISH_NOT_FOUND -> HttpStatus.NOT_FOUND;
+
+            case INVALID_OWNER_ROLE,
+                 ACCESS_DENIED,
+                 INVALID_OWNER_RESTAURANT -> HttpStatus.FORBIDDEN;
+
             case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }

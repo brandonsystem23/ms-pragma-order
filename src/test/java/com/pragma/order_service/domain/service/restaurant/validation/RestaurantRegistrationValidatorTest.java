@@ -40,7 +40,7 @@ class RestaurantRegistrationValidatorTest {
     void shouldValidateSuccessfully() {
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         UserSummary owner = UserSummary.builder()
@@ -94,7 +94,7 @@ class RestaurantRegistrationValidatorTest {
     void shouldFailWhenNitAlreadyExists() {
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
@@ -113,7 +113,7 @@ class RestaurantRegistrationValidatorTest {
     void shouldFailWhenOwnerDoesNotExist() {
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
@@ -132,7 +132,7 @@ class RestaurantRegistrationValidatorTest {
     void shouldFailWhenOwnerIsInactive() {
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         UserSummary owner = UserSummary.builder()
@@ -157,7 +157,7 @@ class RestaurantRegistrationValidatorTest {
     void shouldFailWhenOwnerRoleIsInvalid() {
         AuthSession authSession = AuthSession.builder()
                 .userId(1L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         UserSummary owner = UserSummary.builder()

@@ -24,7 +24,7 @@ public class RestaurantController {
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Crear restaurante", description = "Crea un restaurante asignandolo a un propietario. Requiere rol ADMIN")
+    @Operation(summary = "Crear restaurante", description = "Crea un restaurante asignandolo a un propietario. Requiere rol ADMINISTRADOR")
     public Mono<RestaurantResponse> create(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody CreateRestaurantRequest request
