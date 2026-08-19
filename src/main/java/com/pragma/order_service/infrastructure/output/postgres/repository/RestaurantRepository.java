@@ -27,4 +27,12 @@ public interface RestaurantRepository extends ReactiveCrudRepository<RestaurantE
     WHERE status = TRUE
     """)
     Mono<Long> countActiveRestaurants();
+
+    @Query("""
+    SELECT re.restaurant_id
+    FROM restaurant_employee re
+    WHERE re.employee_id = :employeeId
+    LIMIT 1
+    """)
+    Mono<Long> findRestaurantIdByEmployeeId(Long employeeId);
 }

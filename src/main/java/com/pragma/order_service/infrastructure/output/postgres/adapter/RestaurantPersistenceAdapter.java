@@ -48,4 +48,9 @@ public class RestaurantPersistenceAdapter implements RestaurantPersistencePort {
     public Mono<Long> countActiveRestaurants() {
         return restaurantRepository.countActiveRestaurants();
     }
+
+    @Override
+    public Mono<Long> findRestaurantIdByEmployeeId(Long employeeId) {
+        return restaurantRepository.findRestaurantIdByEmployeeId(employeeId);
+    }
 }

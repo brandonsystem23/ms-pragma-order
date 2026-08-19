@@ -253,4 +253,70 @@ class OrderPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldCountOrdersByRestaurantIdAndStatusSuccessfully() {
+        when(orderRepository.countOrdersByRestaurantIdAndStatus(1L, "PENDIENTE"))
+                .thenReturn(Mono.just(3L));
+
+        StepVerifier.create(orderPersistenceAdapter.countOrdersByRestaurantIdAndStatus(1L, "PENDIENTE"))
+                .expectNext(3L)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindOrderIdsByRestaurantIdAndStatusSuccessfully() {
+        when(orderRepository.findOrderIdsByRestaurantIdAndStatus(1L, "PENDIENTE", 10, 0))
+                .thenReturn(Flux.just(100L, 101L));
+
+        StepVerifier.create(orderPersistenceAdapter.findOrderIdsByRestaurantIdAndStatus(1L, "PENDIENTE", 0, 10))
+                .expectNext(100L)
+                .expectNext(101L)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindOrdersDetailByIdsSuccessfully() {
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderSummary row = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(20L)
+                .customerName("Juan Perez")
+                .restaurantId(1L)
+                .restaurantName("El Buen Sabor")
+                .status("PENDIENTE")
+                .dishId(10L)
+                .dishName("Pizza")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        when(orderRepository.findOrdersDetailByIds(List.of(100L)))
+                .thenReturn(Flux.just(row));
+
+        StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(List.of(100L)))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.getOrderId());
+                    Assertions.assertEquals("Juan Perez", result.getCustomerName());
+                    Assertions.assertEquals("Pizza", result.getDishName());
+                    Assertions.assertEquals(BigDecimal.valueOf(2), result.getQuantity());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindOrdersDetailByIdsEmpty() {
+
+        StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(List.of()))
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnEmptyWhenOrderIdsIsNull() {
+        StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(null))
+                .verifyComplete();
+    }
+
 }

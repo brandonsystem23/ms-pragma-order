@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderResponse;
+import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.service.OrderApplicationService;
 import com.pragma.order_service.infrastructure.util.TokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,5 +30,18 @@ public class OrderController {
     ) {
         String token = TokenExtractor.extract(authorizationHeader);
         return orderApplicationService.create(request, token);
+    }
+
+    @GetMapping("/list")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Listar pedidos", description = "Lista pedidos del restaurante asociado al empleado. Requiere rol EMPLEADO")
+    public Mono<PagedResponse<OrderResponse>> list(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @RequestParam(defaultValue = "PENDIENTE") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return orderApplicationService.list(token, status, page, size);
     }
 }

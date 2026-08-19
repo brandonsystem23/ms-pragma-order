@@ -45,10 +45,27 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
         return orderRepository.findOrderDetailById(orderId);
     }
 
-    private Mono<List<OrderItem>> saveItems(
-            Long orderId,
-            List<OrderItem> items) {
+    @Override
+    public Mono<Long> countOrdersByRestaurantIdAndStatus(Long restaurantId, String status) {
+        return orderRepository.countOrdersByRestaurantIdAndStatus(restaurantId, status);
+    }
 
+    @Override
+    public Flux<Long> findOrderIdsByRestaurantIdAndStatus(Long restaurantId, String status, int page, int size) {
+        int offset = page * size;
+        return orderRepository.findOrderIdsByRestaurantIdAndStatus(restaurantId, status, size, offset);
+    }
+
+    @Override
+    public Flux<OrderSummary> findOrdersDetailByIds(List<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Flux.empty();
+        }
+
+        return orderRepository.findOrdersDetailByIds(orderIds);
+    }
+
+    private Mono<List<OrderItem>> saveItems(Long orderId, List<OrderItem> items) {
         if (items == null || items.isEmpty()) {
             return Mono.just(List.of());
         }

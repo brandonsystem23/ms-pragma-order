@@ -17,4 +17,6 @@ public interface RestaurantPersistencePort {
     Flux<Restaurant> findActiveRestaurantsOrdered(int page, int size);
 
     Mono<Long> countActiveRestaurants();
+
+    Mono<Long> findRestaurantIdByEmployeeId(Long employeeId);
 }
