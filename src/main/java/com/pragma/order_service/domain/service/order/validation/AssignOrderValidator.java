@@ -78,6 +78,7 @@ public class AssignOrderValidator {
         }
 
         order.setEmployeeAssignedId(employeeId);
+        order.setStatus(OrderStatus.IN_PREPARATION);
         return Mono.just(order);
     }
 }

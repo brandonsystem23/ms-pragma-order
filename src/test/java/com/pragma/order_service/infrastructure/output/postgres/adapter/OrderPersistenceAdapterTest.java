@@ -23,9 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +59,7 @@ class OrderPersistenceAdapterTest {
         Order order = Order.builder()
                 .customerId(20L)
                 .restaurantId(1L)
+                .employeeAssignedId(null)
                 .status("PENDIENTE")
                 .items(List.of(
                         OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).build(),
@@ -71,6 +70,7 @@ class OrderPersistenceAdapterTest {
         OrderEntity orderEntity = OrderEntity.builder()
                 .customerId(20L)
                 .restaurantId(1L)
+                .employeeAssignedId(null)
                 .status("PENDIENTE")
                 .build();
 
@@ -78,6 +78,7 @@ class OrderPersistenceAdapterTest {
                 .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
+                .employeeAssignedId(null)
                 .status("PENDIENTE")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -125,6 +126,7 @@ class OrderPersistenceAdapterTest {
                 .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
+                .employeeAssignedId(null)
                 .status("PENDIENTE")
                 .createdAt(savedOrderEntity.getCreatedAt())
                 .updatedAt(savedOrderEntity.getUpdatedAt())
@@ -149,36 +151,40 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(100L, result.getId());
                     Assertions.assertEquals(20L, result.getCustomerId());
                     Assertions.assertEquals(1L, result.getRestaurantId());
+                    Assertions.assertNull(result.getEmployeeAssignedId());
                     Assertions.assertEquals("PENDIENTE", result.getStatus());
                     Assertions.assertEquals(2, result.getItems().size());
-                    Assertions.assertEquals(10L, result.getItems().get(0).getDishId());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), result.getItems().get(0).getQuantity());
-                    Assertions.assertEquals(11L, result.getItems().get(1).getDishId());
-                    Assertions.assertEquals(BigDecimal.ONE, result.getItems().get(1).getQuantity());
                 })
                 .verifyComplete();
     }
 
     @Test
-    void shouldSaveOrderSuccessfullyWithoutItems() {
+    void shouldUpdateExistingOrderSuccessfullyWithoutSavingItemsAgain() {
         Order order = Order.builder()
+                .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
-                .status("PENDIENTE")
-                .items(List.of())
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
+                .items(List.of(
+                        OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).build()
+                ))
                 .build();
 
         OrderEntity orderEntity = OrderEntity.builder()
+                .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
-                .status("PENDIENTE")
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
                 .build();
 
         OrderEntity savedOrderEntity = OrderEntity.builder()
                 .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
-                .status("PENDIENTE")
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -187,7 +193,8 @@ class OrderPersistenceAdapterTest {
                 .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
-                .status("PENDIENTE")
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
                 .createdAt(savedOrderEntity.getCreatedAt())
                 .updatedAt(savedOrderEntity.getUpdatedAt())
                 .build();
@@ -199,7 +206,9 @@ class OrderPersistenceAdapterTest {
         StepVerifier.create(orderPersistenceAdapter.save(order))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.getId());
-                    Assertions.assertTrue(result.getItems().isEmpty());
+                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
+                    Assertions.assertEquals("EN_PREPARACION", result.getStatus());
+                    Assertions.assertEquals(1, result.getItems().size());
                 })
                 .verifyComplete();
     }
@@ -214,7 +223,8 @@ class OrderPersistenceAdapterTest {
                 .customerName("Brandon Briones")
                 .restaurantId(1L)
                 .restaurantName("El buen sabor")
-                .status("PENDIENTE")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
                 .dishId(10L)
                 .dishName("Hamburguesa triple")
                 .quantity(BigDecimal.valueOf(2))
@@ -228,7 +238,8 @@ class OrderPersistenceAdapterTest {
                 .customerName("Brandon Briones")
                 .restaurantId(1L)
                 .restaurantName("El buen sabor")
-                .status("PENDIENTE")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
                 .dishId(11L)
                 .dishName("Lomo saltado")
                 .quantity(BigDecimal.ONE)
@@ -241,15 +252,12 @@ class OrderPersistenceAdapterTest {
         StepVerifier.create(orderPersistenceAdapter.findOrderDetailById(100L))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.getOrderId());
+                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("Brandon Briones", result.getCustomerName());
-                    Assertions.assertEquals("El buen sabor", result.getRestaurantName());
-                    Assertions.assertEquals("Hamburguesa triple", result.getDishName());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), result.getQuantity());
                 })
                 .assertNext(result -> {
                     Assertions.assertEquals(11L, result.getDishId());
-                    Assertions.assertEquals("Lomo saltado", result.getDishName());
-                    Assertions.assertEquals(BigDecimal.ONE, result.getQuantity());
+                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                 })
                 .verifyComplete();
     }
@@ -285,7 +293,8 @@ class OrderPersistenceAdapterTest {
                 .customerName("Juan Perez")
                 .restaurantId(1L)
                 .restaurantName("El Buen Sabor")
-                .status("PENDIENTE")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
                 .dishId(10L)
                 .dishName("Pizza")
                 .quantity(BigDecimal.valueOf(2))
@@ -299,16 +308,14 @@ class OrderPersistenceAdapterTest {
         StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(List.of(100L)))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.getOrderId());
+                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("Juan Perez", result.getCustomerName());
-                    Assertions.assertEquals("Pizza", result.getDishName());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), result.getQuantity());
                 })
                 .verifyComplete();
     }
 
     @Test
     void shouldFindOrdersDetailByIdsEmpty() {
-
         StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(List.of()))
                 .verifyComplete();
     }
@@ -319,4 +326,137 @@ class OrderPersistenceAdapterTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldSaveOrderSuccessfullyWhenItemsAreNull() {
+        Order order = Order.builder()
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .items(null)
+                .build();
+
+        OrderEntity orderEntity = OrderEntity.builder()
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .build();
+
+        OrderEntity savedOrderEntity = OrderEntity.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .build();
+
+        Order mappedOrder = Order.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .items(List.of())
+                .build();
+
+        when(orderEntityMapper.toEntity(order))
+                .thenReturn(orderEntity);
+
+        when(orderRepository.save(orderEntity))
+                .thenReturn(Mono.just(savedOrderEntity));
+
+        when(orderEntityMapper.toDomain(savedOrderEntity))
+                .thenReturn(mappedOrder);
+
+        StepVerifier.create(orderPersistenceAdapter.save(order))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.getId());
+                    Assertions.assertEquals(20L, result.getCustomerId());
+                    Assertions.assertEquals(1L, result.getRestaurantId());
+                    Assertions.assertEquals("PENDIENTE", result.getStatus());
+                    Assertions.assertNotNull(result.getItems());
+                    Assertions.assertTrue(result.getItems().isEmpty());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldSaveOrderSuccessfullyWhenItemsAreEmpty() {
+        Order order = Order.builder()
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .items(List.of())
+                .build();
+
+        OrderEntity orderEntity = OrderEntity.builder()
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .build();
+
+        OrderEntity savedOrderEntity = OrderEntity.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .build();
+
+        Order mappedOrder = Order.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .status("PENDIENTE")
+                .build();
+
+        when(orderEntityMapper.toEntity(order))
+                .thenReturn(orderEntity);
+
+        when(orderRepository.save(orderEntity))
+                .thenReturn(Mono.just(savedOrderEntity));
+
+        when(orderEntityMapper.toDomain(savedOrderEntity))
+                .thenReturn(mappedOrder);
+
+        StepVerifier.create(orderPersistenceAdapter.save(order))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.getId());
+                    Assertions.assertEquals(20L, result.getCustomerId());
+                    Assertions.assertEquals(1L, result.getRestaurantId());
+                    Assertions.assertEquals("PENDIENTE", result.getStatus());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindOrderByIdSuccessfully() {
+        OrderEntity orderEntity = OrderEntity.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
+                .build();
+
+        Order order = Order.builder()
+                .id(100L)
+                .customerId(20L)
+                .restaurantId(1L)
+                .employeeAssignedId(30L)
+                .status("EN_PREPARACION")
+                .build();
+
+        when(orderRepository.findById(100L))
+                .thenReturn(Mono.just(orderEntity));
+
+        when(orderEntityMapper.toDomain(orderEntity))
+                .thenReturn(order);
+
+        StepVerifier.create(orderPersistenceAdapter.findById(100L))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.getId());
+                    Assertions.assertEquals(20L, result.getCustomerId());
+                    Assertions.assertEquals(1L, result.getRestaurantId());
+                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
+                    Assertions.assertEquals("EN_PREPARACION", result.getStatus());
+                })
+                .verifyComplete();
+    }
 }

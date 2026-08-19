@@ -1,13 +1,14 @@
 package com.pragma.order_service.domain.service.order;
 
-import com.pragma.order_service.domain.model.Order;
-import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
+import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 public class AssignOrderService implements AssignOrderUseCase {
@@ -17,15 +18,16 @@ public class AssignOrderService implements AssignOrderUseCase {
     private final AssignOrderDomainValidator assignOrderDomainValidator;
 
     @Override
-    public Mono<Order> assign(Long orderId, String token) {
+    public Mono<List<OrderSummary>> assign(Long orderId, String token) {
         return Mono.defer(() -> {
             assignOrderDomainValidator.validate(orderId);
 
             return assignOrderValidator.validate(orderId, token)
-                    .flatMap(order -> {
-                        order.setStatus(OrderStatus.IN_PREPARATION);
-                        return orderPersistencePort.save(order);
-                    });
+                    .flatMap(orderPersistencePort::save)
+                    .flatMap(savedOrder ->
+                            orderPersistencePort.findOrderDetailById(savedOrder.getId())
+                                    .collectList()
+                    );
         });
     }
 }
