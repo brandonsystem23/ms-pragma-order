@@ -1,12 +1,14 @@
 package com.pragma.order_service.infrastructure.configuration;
 
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
+import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.port.in.ListDishesUseCase;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
+import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
@@ -18,6 +20,9 @@ import com.pragma.order_service.domain.service.dish.ListDishesService;
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainValidator;
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
 import com.pragma.order_service.domain.service.dish.UpdateDishService;
+import com.pragma.order_service.domain.service.order.CreateOrderService;
+import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
+import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
 import com.pragma.order_service.domain.service.restaurant.CreateRestaurantService;
 import com.pragma.order_service.domain.service.restaurant.ListRestaurantsService;
 import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
@@ -176,4 +181,36 @@ public class BeanConfiguration {
         );
     }
 
+    @Bean
+    public OrderDomainValidator orderDomainValidator() {
+        return new OrderDomainValidator();
+    }
+
+    @Bean
+    public OrderRegistrationValidator orderRegistrationValidator(
+            AuthSessionPort authSessionPort,
+            RestaurantPersistencePort restaurantPersistencePort,
+            DishPersistencePort dishPersistencePort,
+            OrderPersistencePort orderPersistencePort
+    ) {
+        return new OrderRegistrationValidator(
+                authSessionPort,
+                restaurantPersistencePort,
+                dishPersistencePort,
+                orderPersistencePort
+        );
+    }
+
+    @Bean
+    public CreateOrderUseCase createOrderUseCase(
+            OrderPersistencePort orderPersistencePort,
+            OrderRegistrationValidator orderRegistrationValidator,
+            OrderDomainValidator orderDomainValidator
+    ) {
+        return new CreateOrderService(
+                orderPersistencePort,
+                orderRegistrationValidator,
+                orderDomainValidator
+        );
+    }
 }

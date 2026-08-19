@@ -4,6 +4,7 @@ import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Dish;
+import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
@@ -13,8 +14,6 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class UpdateDishRegistrationValidator {
-
-    private static final String OWNER_ROLE = "PROPIETARIO";
 
     private final DishPersistencePort dishPersistencePort;
     private final RestaurantPersistencePort restaurantPersistencePort;
@@ -46,7 +45,7 @@ public class UpdateDishRegistrationValidator {
     }
 
     private Mono<AuthSession> checkOwnerRole(AuthSession authSession) {
-        if (!OWNER_ROLE.equals(authSession.role())) {
+        if (!RoleNames.OWNER.equals(authSession.role())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
                     DomainErrorMessages.DISH_ACCESS_DENIED

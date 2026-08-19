@@ -129,12 +129,12 @@ class ListDishesServiceTest {
         doNothing().when(listDishesDomainValidator).validate(anyLong(), any(), anyInt(), anyInt());
 
         StepVerifier.create(service.listByRestaurant(1L, null, 0, 10, "token-test"))
-                .expectErrorSatisfies(error -> {
+                .expectErrorSatisfies(error ->
                     Assertions.assertEquals(
                             "El restaurante no existe",
                             error.getMessage()
-                    );
-                })
+                    )
+                )
                 .verify();
     }
 }

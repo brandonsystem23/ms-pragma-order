@@ -51,6 +51,13 @@ public final class DomainErrorMessages {
     public static final String SIZE_INVALID = "El parámetro size debe ser mayor a 0";
     public static final String CATEGORY_INVALID = "El parámetro category no puede estar vacío";
 
+    public static final String ORDER_ITEMS_REQUIRED = "La lista de platos es obligatoria";
+    public static final String ORDER_ITEM_INVALID = "Cada item del pedido debe ser válido";
+    public static final String ORDER_ITEM_QUANTITY_REQUIRED = "La cantidad del plato es obligatoria";
+    public static final String ORDER_ITEM_QUANTITY_INVALID = "La cantidad del plato debe ser un número entero positivo";
+    public static final String ORDER_CREATE_ACCESS_DENIED = "No tienes permisos para crear pedidos";
+    public static final String ACTIVE_ORDER_EXISTS = "El cliente ya tiene un pedido en proceso para este restaurante";
+    public static final String ORDER_DISH_INVALID_RESTAURANT = "Todos los platos del pedido deben pertenecer al restaurante indicado";
 
     private DomainErrorMessages() {
     }

@@ -240,7 +240,7 @@ class DishApplicationServiceTest {
         StepVerifier.create(dishApplicationService.listByRestaurant(1L, "PIZZA", 0, 10, "token-test"))
                 .assertNext(response -> {
                     Assertions.assertEquals(1, response.content().size());
-                    Assertions.assertEquals("Pizza Hawaiana", response.content().get(0).name());
+                    Assertions.assertEquals("Pizza Hawaiana", response.content().getFirst().name());
                     Assertions.assertEquals(1L, response.totalElements());
                     Assertions.assertEquals(1, response.totalPages());
                 })

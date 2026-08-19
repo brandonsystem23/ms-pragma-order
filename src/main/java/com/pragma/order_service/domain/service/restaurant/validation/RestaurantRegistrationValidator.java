@@ -3,6 +3,7 @@ package com.pragma.order_service.domain.service.restaurant.validation;
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
+import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
@@ -13,9 +14,6 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class RestaurantRegistrationValidator {
-
-    private static final String ADMIN_ROLE = "ADMIN";
-    private static final String OWNER_ROLE = "PROPIETARIO";
 
     private final RestaurantPersistencePort restaurantPersistencePort;
     private final AuthSessionPort authSessionPort;
@@ -38,7 +36,7 @@ public class RestaurantRegistrationValidator {
     }
 
     private Mono<Void> checkAdminRole(AuthSession authSession) {
-        if (!ADMIN_ROLE.equals(authSession.role())) {
+        if (!RoleNames.ADMIN.equals(authSession.role())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
                     DomainErrorMessages.RESTAURANT_ACCESS_DENIED
@@ -76,7 +74,7 @@ public class RestaurantRegistrationValidator {
             ));
         }
 
-        if (!OWNER_ROLE.equals(userSummary.roleName())) {
+        if (!RoleNames.OWNER.equals(userSummary.roleName())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.INVALID_OWNER_ROLE,
                     DomainErrorMessages.INVALID_OWNER_ROLE

@@ -33,7 +33,7 @@ public class DishDomainValidator {
             throw new DomainException(DomainErrorCode.VALIDATION_ERROR, DomainErrorMessages.PRICE_REQUIRED);
         }
 
-        if (!PriceValidator.isValid(price)) {
+        if (PriceValidator.isInvalid(price)) {
             throw new DomainException(DomainErrorCode.VALIDATION_ERROR, DomainErrorMessages.PRICE_INVALID);
         }
     }

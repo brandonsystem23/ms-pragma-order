@@ -123,7 +123,7 @@ class RestaurantApplicationServiceTest {
         StepVerifier.create(restaurantApplicationService.list("token-test", 0, 10))
                 .assertNext(response -> {
                     Assertions.assertEquals(1, response.content().size());
-                    Assertions.assertEquals("Burger House", response.content().get(0).name());
+                    Assertions.assertEquals("Burger House", response.content().getFirst().name());
                     Assertions.assertEquals(1L, response.totalElements());
                 })
                 .verifyComplete();

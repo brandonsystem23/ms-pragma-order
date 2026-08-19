@@ -156,7 +156,7 @@ class DishControllerTest {
         StepVerifier.create(dishController.listByRestaurant(1L, "PIZZA", 0, 10, "Bearer token-test"))
                 .assertNext(result -> {
                     Assertions.assertEquals(1, result.content().size());
-                    Assertions.assertEquals("Pizza Hawaiana", result.content().get(0).name());
+                    Assertions.assertEquals("Pizza Hawaiana", result.content().getFirst().name());
                     Assertions.assertEquals(1L, result.totalElements());
                 })
                 .verifyComplete();

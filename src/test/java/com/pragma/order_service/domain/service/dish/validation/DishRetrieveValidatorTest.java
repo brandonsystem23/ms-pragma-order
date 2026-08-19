@@ -60,7 +60,7 @@ class DishRetrieveValidatorTest {
     void shouldFailWhenRoleIsNotClient() {
         AuthSession authSession = AuthSession.builder()
                 .userId(10L)
-                .role("ADMIN")
+                .role("ADMINISTRADOR")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
