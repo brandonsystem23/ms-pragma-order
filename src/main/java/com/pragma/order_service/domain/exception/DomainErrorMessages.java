@@ -59,6 +59,11 @@ public final class DomainErrorMessages {
     public static final String ACTIVE_ORDER_EXISTS = "El cliente ya tiene un pedido en proceso para este restaurante";
     public static final String ORDER_DISH_INVALID_RESTAURANT = "Todos los platos del pedido deben pertenecer al restaurante indicado";
 
+    public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
+    public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";
+    public static final String ORDER_STATUS_NOT_FOUND = "El estado ingresado no existe";
+    public static final String EMPLOYEE_RESTAURANT_NOT_FOUND = "El empleado no tiene un restaurante asignado";
+
     private DomainErrorMessages() {
     }
 }

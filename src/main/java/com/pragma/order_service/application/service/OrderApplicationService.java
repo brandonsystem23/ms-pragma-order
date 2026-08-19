@@ -3,8 +3,10 @@ package com.pragma.order_service.application.service;
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
+import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
+import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class OrderApplicationService {
     private final CreateOrderUseCase createOrderUseCase;
     private final OrderDtoMapper orderDtoMapper;
     private final OrderPersistencePort orderPersistencePort;
+    private final ListOrdersUseCase listOrdersUseCase;
 
     public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
         return createOrderUseCase.create(orderDtoMapper.toCommand(request), token)
@@ -28,7 +31,6 @@ public class OrderApplicationService {
                                 .collectList()
                 )
                 .map(listOrderSummary -> {
-
                     OrderSummary orderSummary = listOrderSummary.getFirst();
 
                     List<OrderItemResponse> items = listOrderSummary.stream()
@@ -37,5 +39,9 @@ public class OrderApplicationService {
 
                     return orderDtoMapper.toResponse(orderSummary, items);
                 });
+    }
+
+    public Mono<PagedResponse<OrderResponse>> list(String token, String status, int page, int size) {
+        return listOrdersUseCase.list(token, status, page, size);
     }
 }

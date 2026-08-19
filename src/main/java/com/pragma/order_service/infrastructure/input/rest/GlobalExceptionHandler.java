@@ -57,7 +57,8 @@ public class GlobalExceptionHandler {
 
             case OWNER_NOT_FOUND,
                  RESTAURANT_NOT_FOUND,
-                 DISH_NOT_FOUND -> HttpStatus.NOT_FOUND;
+                 DISH_NOT_FOUND,
+                 EMPLOYEE_RESTAURANT_NOT_FOUND -> HttpStatus.NOT_FOUND;
 
             case INVALID_OWNER_ROLE,
                  ACCESS_DENIED,

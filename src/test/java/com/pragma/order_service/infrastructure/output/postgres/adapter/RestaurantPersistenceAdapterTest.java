@@ -155,4 +155,14 @@ class RestaurantPersistenceAdapterTest {
                 .expectNext(2L)
                 .verifyComplete();
     }
+
+    @Test
+    void shouldFindRestaurantIdByEmployeeIdSuccessfully() {
+        when(restaurantRepository.findRestaurantIdByEmployeeId(30L)).thenReturn(Mono.just(5L));
+
+        StepVerifier.create(restaurantPersistenceAdapter.findRestaurantIdByEmployeeId(30L))
+                .expectNext(5L)
+                .verifyComplete();
+    }
+
 }

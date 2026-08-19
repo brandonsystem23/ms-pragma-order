@@ -152,4 +152,31 @@ class GlobalExceptionHandlerTest {
         assertEquals(404, response.getStatusCode().value());
         assertEquals("El usuario no existe", Objects.requireNonNull(response.getBody()).message());
     }
+
+    @Test
+    void shouldHandleEmployeeRestaurantNotFound() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.EMPLOYEE_RESTAURANT_NOT_FOUND,
+                "El empleado no tiene un restaurante asignado"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(404, response.getStatusCode().value());
+        assertEquals("El empleado no tiene un restaurante asignado", Objects.requireNonNull(response.getBody()).message());
+    }
+
+    @Test
+    void shouldHandleOrderStatusNotFound() {
+        DomainException ex = new DomainException(
+                DomainErrorCode.VALIDATION_ERROR,
+                "El estado ingresado no existe"
+        );
+
+        ResponseEntity<ErrorResponse> response = handler.handleDomainException(ex, exchange);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("El estado ingresado no existe", Objects.requireNonNull(response.getBody()).message());
+    }
+
 }
