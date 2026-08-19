@@ -6,14 +6,11 @@ import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
-import com.pragma.order_service.domain.model.Order;
-import com.pragma.order_service.domain.model.OrderItem;
-import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
+import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
-import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -21,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -32,7 +28,6 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -46,10 +41,10 @@ class OrderApplicationServiceTest {
     private OrderDtoMapper orderDtoMapper;
 
     @Mock
-    private OrderPersistencePort orderPersistencePort;
+    private ListOrdersUseCase listOrdersUseCase;
 
     @Mock
-    private ListOrdersUseCase listOrdersUseCase;
+    private AssignOrderUseCase assignOrderUseCase;
 
     @InjectMocks
     private OrderApplicationService orderApplicationService;
@@ -72,18 +67,6 @@ class OrderApplicationServiceTest {
                 )
         );
 
-        Order savedOrder = Order.builder()
-                .id(100L)
-                .customerId(50L)
-                .restaurantId(1L)
-                .status(OrderStatus.PENDING)
-                .items(List.of(
-                        OrderItem.builder().id(1L).orderId(100L).dishId(10L).quantity(BigDecimal.valueOf(2)).build(),
-                        OrderItem.builder().id(2L).orderId(100L).dishId(11L).quantity(BigDecimal.ONE).build()
-                ))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -148,8 +131,7 @@ class OrderApplicationServiceTest {
         when(orderDtoMapper.toItemResponse(any()))
                 .thenReturn(itemResponse1)
                 .thenReturn(itemResponse2);
-        when(createOrderUseCase.create(any(), anyString())).thenReturn(Mono.just(savedOrder));
-        when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(row1, row2));
+        when(createOrderUseCase.create(any(), anyString())).thenReturn(Mono.just(List.of(row1, row2)));
 
         StepVerifier.create(orderApplicationService.create(request, "token-test"))
                 .assertNext(result -> {
@@ -209,6 +191,102 @@ class OrderApplicationServiceTest {
                     Assertions.assertEquals(1L, response.totalElements());
                     Assertions.assertEquals(1, response.totalPages());
                     Assertions.assertEquals("PENDIENTE", response.content().getFirst().status());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldAssignOrderSuccessfully() {
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderSummary row1 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderSummary row2 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .dishId(11L)
+                .dishName("Lomo saltado")
+                .quantity(BigDecimal.ONE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderItemResponse itemResponse1 = OrderItemResponse.builder()
+                .dishId(10L)
+                .name("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .build();
+
+        OrderItemResponse itemResponse2 = OrderItemResponse.builder()
+                .dishId(11L)
+                .name("Lomo saltado")
+                .quantity(BigDecimal.ONE)
+                .build();
+
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(100L)
+                .customerId(50L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .items(List.of(itemResponse1, itemResponse2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        when(assignOrderUseCase.assign(100L, "token-test"))
+                .thenReturn(Mono.just(List.of(row1, row2)));
+
+        when(orderDtoMapper.toItemResponse(any()))
+                .thenReturn(itemResponse1)
+                .thenReturn(itemResponse2);
+
+        when(orderDtoMapper.toResponse(any(), anyList()))
+                .thenReturn(orderResponse);
+
+        StepVerifier.create(orderApplicationService.assign(100L, "token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals(50L, result.customerId());
+                    Assertions.assertEquals("Brandon Briones", result.nameCustomer());
+                    Assertions.assertEquals(1L, result.restaurantId());
+                    Assertions.assertEquals("El buen sabor", result.nameRestaurant());
+                    Assertions.assertEquals("EN_PREPARACION", result.status());
+                    Assertions.assertEquals(30L, result.employeeAssignedId());
+
+                    Assertions.assertEquals(2, result.items().size());
+
+                    Assertions.assertEquals(10L, result.items().getFirst().dishId());
+                    Assertions.assertEquals("Hamburguesa triple",
+                            result.items().getFirst().name());
+                    Assertions.assertEquals(BigDecimal.valueOf(2),
+                            result.items().getFirst().quantity());
+
+                    Assertions.assertEquals(11L, result.items().get(1).dishId());
+                    Assertions.assertEquals("Lomo saltado",
+                            result.items().get(1).name());
+                    Assertions.assertEquals(BigDecimal.ONE,
+                            result.items().get(1).quantity());
                 })
                 .verifyComplete();
     }

@@ -1,5 +1,6 @@
 package com.pragma.order_service.infrastructure.configuration;
 
+import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
@@ -13,16 +14,19 @@ import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
+import com.pragma.order_service.domain.service.dish.ListDishesService;
+import com.pragma.order_service.domain.service.dish.UpdateDishService;
 import com.pragma.order_service.domain.service.dish.validation.DishDomainValidator;
 import com.pragma.order_service.domain.service.dish.validation.DishRegistrationValidator;
 import com.pragma.order_service.domain.service.dish.validation.DishRetrieveValidator;
 import com.pragma.order_service.domain.service.dish.validation.ListDishesDomainValidator;
-import com.pragma.order_service.domain.service.dish.ListDishesService;
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainValidator;
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
-import com.pragma.order_service.domain.service.dish.UpdateDishService;
+import com.pragma.order_service.domain.service.order.AssignOrderService;
 import com.pragma.order_service.domain.service.order.CreateOrderService;
 import com.pragma.order_service.domain.service.order.ListOrdersService;
+import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
+import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
@@ -30,9 +34,9 @@ import com.pragma.order_service.domain.service.order.validation.OrderRetrieveVal
 import com.pragma.order_service.domain.service.restaurant.CreateRestaurantService;
 import com.pragma.order_service.domain.service.restaurant.ListRestaurantsService;
 import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
-import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRetrieveValidator;
 import com.pragma.order_service.domain.service.restaurant.validation.RestaurantDomainValidator;
 import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRegistrationValidator;
+import com.pragma.order_service.domain.service.restaurant.validation.RestaurantRetrieveValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -215,6 +219,37 @@ public class BeanConfiguration {
                 orderPersistencePort,
                 orderRegistrationValidator,
                 orderDomainValidator
+        );
+    }
+
+    @Bean
+    public AssignOrderDomainValidator assignOrderDomainValidator() {
+        return new AssignOrderDomainValidator();
+    }
+
+    @Bean
+    public AssignOrderValidator assignOrderValidator(
+            AuthSessionPort authSessionPort,
+            RestaurantPersistencePort restaurantPersistencePort,
+            OrderPersistencePort orderPersistencePort
+    ) {
+        return new AssignOrderValidator(
+                authSessionPort,
+                restaurantPersistencePort,
+                orderPersistencePort
+        );
+    }
+
+    @Bean
+    public AssignOrderUseCase assignOrderUseCase(
+            OrderPersistencePort orderPersistencePort,
+            AssignOrderValidator assignOrderValidator,
+            AssignOrderDomainValidator assignOrderDomainValidator
+    ) {
+        return new AssignOrderService(
+                orderPersistencePort,
+                assignOrderValidator,
+                assignOrderDomainValidator
         );
     }
 

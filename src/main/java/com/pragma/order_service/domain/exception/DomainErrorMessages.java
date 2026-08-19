@@ -51,6 +51,8 @@ public final class DomainErrorMessages {
     public static final String SIZE_INVALID = "El parámetro size debe ser mayor a 0";
     public static final String CATEGORY_INVALID = "El parámetro category no puede estar vacío";
 
+    public static final String ORDER_ID_REQUIRED = "El campo orderId es obligatorio";
+    public static final String ORDER_NOT_FOUND = "El pedido no existe";
     public static final String ORDER_ITEMS_REQUIRED = "La lista de platos es obligatoria";
     public static final String ORDER_ITEM_INVALID = "Cada item del pedido debe ser válido";
     public static final String ORDER_ITEM_QUANTITY_REQUIRED = "La cantidad del plato es obligatoria";
@@ -58,6 +60,10 @@ public final class DomainErrorMessages {
     public static final String ORDER_CREATE_ACCESS_DENIED = "No tienes permisos para crear pedidos";
     public static final String ACTIVE_ORDER_EXISTS = "El cliente ya tiene un pedido en proceso para este restaurante";
     public static final String ORDER_DISH_INVALID_RESTAURANT = "Todos los platos del pedido deben pertenecer al restaurante indicado";
+    public static final String ORDER_ASSIGN_ACCESS_DENIED = "No tienes permisos para asignarte pedidos";
+    public static final String ORDER_ASSIGN_INVALID_STATUS = "Solo se pueden asignar pedidos en estado PENDIENTE";
+    public static final String ORDER_ALREADY_ASSIGNED = "El pedido ya tiene un empleado asignado";
+    public static final String ORDER_ASSIGN_DIFFERENT_RESTAURANT = "No puedes asignarte pedidos de otro restaurante";
 
     public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
     public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";

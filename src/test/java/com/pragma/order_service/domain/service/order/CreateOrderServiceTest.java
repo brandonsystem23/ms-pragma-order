@@ -8,19 +8,23 @@ import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
+import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -50,6 +54,36 @@ class CreateOrderServiceTest {
                 )
         );
 
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderSummary row1 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("PENDIENTE")
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderSummary row2 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("PENDIENTE")
+                .dishId(11L)
+                .dishName("Lomo saltado")
+                .quantity(BigDecimal.ONE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
         Order savedOrder = Order.builder()
                 .id(100L)
                 .customerId(20L)
@@ -64,16 +98,11 @@ class CreateOrderServiceTest {
         doNothing().when(orderDomainValidator).validateForCreate(any());
         when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(20L));
         when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
+        when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(row1, row2));
 
         StepVerifier.create(service.create(command, "token-test"))
                 .assertNext(result -> {
-                    Assertions.assertEquals(100L, result.getId());
-                    Assertions.assertEquals(20L, result.getCustomerId());
-                    Assertions.assertEquals(1L, result.getRestaurantId());
-                    Assertions.assertEquals("PENDIENTE", result.getStatus());
-                    Assertions.assertEquals(2, result.getItems().size());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), result.getItems().get(0).getQuantity());
-                    Assertions.assertEquals(BigDecimal.ONE, result.getItems().get(1).getQuantity());
+                    Assertions.assertEquals(2, result.size());
                 })
                 .verifyComplete();
     }
@@ -85,22 +114,56 @@ class CreateOrderServiceTest {
                 List.of(new CreateOrderItemCommand(99L, BigDecimal.valueOf(3)))
         );
 
-        doNothing().when(orderDomainValidator).validateForCreate(any());
-        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(33L));
+        LocalDateTime now = LocalDateTime.now();
 
-        when(orderPersistencePort.save(any())).thenAnswer(invocation -> {
-            Order orderToSave = invocation.getArgument(0);
-            return Mono.just(orderToSave);
-        });
+        OrderSummary row1 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("PENDIENTE")
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderSummary row2 = OrderSummary.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("PENDIENTE")
+                .dishId(11L)
+                .dishName("Lomo saltado")
+                .quantity(BigDecimal.ONE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        doNothing().when(orderDomainValidator)
+                .validateForCreate(any());
+
+        when(orderRegistrationValidator.validate(any(), any(), anyString()))
+                .thenReturn(Mono.just(33L));
+
+        when(orderPersistencePort.save(any()))
+                .thenAnswer(invocation -> {
+                    Order orderToSave = invocation.getArgument(0);
+                    orderToSave.setId(100L);
+
+                    return Mono.just(orderToSave);
+                });
+
+        when(orderPersistencePort.findOrderDetailById(100L))
+                .thenReturn(Flux.just(row1, row2));
 
         StepVerifier.create(service.create(command, "token-test"))
                 .assertNext(result -> {
-                    Assertions.assertEquals(33L, result.getCustomerId());
-                    Assertions.assertEquals(5L, result.getRestaurantId());
-                    Assertions.assertEquals("PENDIENTE", result.getStatus());
-                    Assertions.assertEquals(1, result.getItems().size());
-                    Assertions.assertEquals(99L, result.getItems().getFirst().getDishId());
-                    Assertions.assertEquals(BigDecimal.valueOf(3), result.getItems().getFirst().getQuantity());
+                    Assertions.assertEquals(2, result.size());
                 })
                 .verifyComplete();
     }

@@ -8,8 +8,11 @@ import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
+import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 public class CreateOrderService implements CreateOrderUseCase {
@@ -19,7 +22,8 @@ public class CreateOrderService implements CreateOrderUseCase {
     private final OrderDomainValidator orderDomainValidator;
 
     @Override
-    public Mono<Order> create(CreateOrderCommand command, String token) {
+    public
+    Mono<List<OrderSummary>> create(CreateOrderCommand command, String token) {
         return Mono.defer(() -> {
             orderDomainValidator.validateForCreate(command);
 
@@ -38,7 +42,11 @@ public class CreateOrderService implements CreateOrderUseCase {
                                 .build();
 
                         return orderPersistencePort.save(order);
-                    });
+                    })
+                    .flatMap(savedOrder ->
+                            orderPersistencePort.findOrderDetailById(savedOrder.getId())
+                                    .collectList()
+                    );
         });
     }
 }

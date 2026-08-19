@@ -32,6 +32,17 @@ public class OrderController {
         return orderApplicationService.create(request, token);
     }
 
+    @PatchMapping("/{orderId}/assign")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Asignar pedido", description = "Permite asignarse un pedido con estado PENDIENTE. Requiere rol EMPLEADO")
+    public Mono<OrderResponse> assign(
+            @PathVariable Long orderId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return orderApplicationService.assign(orderId, token);
+    }
+
     @GetMapping("/list")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Listar pedidos", description = "Lista pedidos del restaurante asociado al empleado. Requiere rol EMPLEADO")

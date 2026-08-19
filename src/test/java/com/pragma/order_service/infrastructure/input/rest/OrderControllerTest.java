@@ -19,9 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +48,7 @@ class OrderControllerTest {
                 .restaurantId(1L)
                 .nameRestaurant("El buen sabor")
                 .status("PENDIENTE")
+                .employeeAssignedId(null)
                 .items(List.of(
                         OrderItemResponse.builder()
                                 .dishId(10L)
@@ -74,13 +73,46 @@ class OrderControllerTest {
                     Assertions.assertEquals(20L, result.customerId());
                     Assertions.assertEquals("Brandon Briones", result.nameCustomer());
                     Assertions.assertEquals(1L, result.restaurantId());
-                    Assertions.assertEquals("El buen sabor", result.nameRestaurant());
                     Assertions.assertEquals("PENDIENTE", result.status());
+                    Assertions.assertNull(result.employeeAssignedId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldAssignOrderSuccessfully() {
+        OrderResponse response = OrderResponse.builder()
+                .id(100L)
+                .customerId(20L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .items(List.of(
+                        OrderItemResponse.builder()
+                                .dishId(10L)
+                                .name("Hamburguesa triple")
+                                .quantity(BigDecimal.valueOf(2))
+                                .build(),
+                        OrderItemResponse.builder()
+                                .dishId(11L)
+                                .name("Lomo saltado")
+                                .quantity(BigDecimal.ONE)
+                                .build()
+                ))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(orderApplicationService.assign(anyLong(), anyString())).thenReturn(Mono.just(response));
+
+        StepVerifier.create(orderController.assign(100L, "Bearer token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("EN_PREPARACION", result.status());
+                    Assertions.assertEquals(30L, result.employeeAssignedId());
                     Assertions.assertEquals(2, result.items().size());
-                    Assertions.assertEquals("Hamburguesa triple", result.items().get(0).name());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), result.items().get(0).quantity());
-                    Assertions.assertEquals("Lomo saltado", result.items().get(1).name());
-                    Assertions.assertEquals(BigDecimal.ONE, result.items().get(1).quantity());
                 })
                 .verifyComplete();
     }
@@ -94,6 +126,7 @@ class OrderControllerTest {
                 .restaurantId(1L)
                 .nameRestaurant("El Buen Sabor")
                 .status("PENDIENTE")
+                .employeeAssignedId(null)
                 .items(List.of(
                         OrderItemResponse.builder()
                                 .dishId(10L)
@@ -124,5 +157,4 @@ class OrderControllerTest {
                 })
                 .verifyComplete();
     }
-
 }

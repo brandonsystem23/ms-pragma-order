@@ -26,6 +26,9 @@ public class OrderEntity {
     @Column("restaurant_id")
     private Long restaurantId;
 
+    @Column("employee_assigned_id")
+    private Long employeeAssignedId;
+
     private String status;
 
     @Column("created_at")
