@@ -1,7 +1,7 @@
 package com.pragma.order_service.domain.service.restaurant;
 
-import com.pragma.order_service.application.dto.response.PagedResponse;
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
+import com.pragma.order_service.domain.model.query.PageResult;
+import com.pragma.order_service.domain.model.query.RestaurantListItem;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
@@ -17,7 +17,7 @@ public class ListRestaurantsService implements ListRestaurantsUseCase {
     private final ListRestaurantsDomainValidator listRestaurantsDomainValidator;
 
     @Override
-    public Mono<PagedResponse<RestaurantListItemResponse>> list(String token, int page, int size) {
+    public Mono<PageResult<RestaurantListItem>> list(String token, int page, int size) {
 
         return Mono.defer(() -> {
             listRestaurantsDomainValidator.validate(page, size);
@@ -25,7 +25,7 @@ public class ListRestaurantsService implements ListRestaurantsUseCase {
                     .then(Mono.defer(() ->
                             Mono.zip(
                                     restaurantPersistencePort.findActiveRestaurantsOrdered(page, size)
-                                            .map(restaurant -> RestaurantListItemResponse.builder()
+                                            .map(restaurant -> RestaurantListItem.builder()
                                                     .id(restaurant.getId())
                                                     .name(restaurant.getName())
                                                     .urlLogo(restaurant.getUrlLogo())
@@ -39,7 +39,7 @@ public class ListRestaurantsService implements ListRestaurantsUseCase {
                         long totalElements = tuple.getT2();
                         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
 
-                        return PagedResponse.<RestaurantListItemResponse>builder()
+                        return PageResult.<RestaurantListItem>builder()
                                 .content(content)
                                 .page(page)
                                 .size(size)

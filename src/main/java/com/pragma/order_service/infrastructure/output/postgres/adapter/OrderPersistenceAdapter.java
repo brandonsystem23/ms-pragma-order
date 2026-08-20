@@ -2,12 +2,12 @@ package com.pragma.order_service.infrastructure.output.postgres.adapter;
 
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderItem;
+import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.infrastructure.output.postgres.entity.OrderEntity;
 import com.pragma.order_service.infrastructure.output.postgres.entity.OrderItemEntity;
 import com.pragma.order_service.infrastructure.output.postgres.mapper.OrderEntityMapper;
 import com.pragma.order_service.infrastructure.output.postgres.mapper.OrderItemEntityMapper;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import com.pragma.order_service.infrastructure.output.postgres.repository.OrderItemRepository;
 import com.pragma.order_service.infrastructure.output.postgres.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +55,9 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
     }
 
     @Override
-    public Flux<OrderSummary> findOrderDetailById(Long orderId) {
-        return orderRepository.findOrderDetailById(orderId);
+    public Flux<OrderDetail> findOrderDetailById(Long orderId) {
+        return orderRepository.findOrderDetailById(orderId)
+                .map(orderEntityMapper::toOrderDetail);
     }
 
     @Override
@@ -71,12 +72,13 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
     }
 
     @Override
-    public Flux<OrderSummary> findOrdersDetailByIds(List<Long> orderIds) {
+    public Flux<OrderDetail> findOrdersDetailByIds(List<Long> orderIds) {
         if (orderIds == null || orderIds.isEmpty()) {
             return Flux.empty();
         }
 
-        return orderRepository.findOrdersDetailByIds(orderIds);
+        return orderRepository.findOrdersDetailByIds(orderIds)
+                .map(orderEntityMapper::toOrderDetail);
     }
 
     private Mono<List<OrderItem>> saveItems(Long orderId, List<OrderItem> items) {

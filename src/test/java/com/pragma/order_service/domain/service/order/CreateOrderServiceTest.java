@@ -5,10 +5,10 @@ import com.pragma.order_service.domain.model.OrderItem;
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
+import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +56,7 @@ class CreateOrderServiceTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        OrderSummary row1 = OrderSummary.builder()
+        OrderDetail row1 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -70,7 +70,7 @@ class CreateOrderServiceTest {
                 .updatedAt(now)
                 .build();
 
-        OrderSummary row2 = OrderSummary.builder()
+        OrderDetail row2 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -101,9 +101,7 @@ class CreateOrderServiceTest {
         when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(row1, row2));
 
         StepVerifier.create(service.create(command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(2, result.size());
-                })
+                .assertNext(result -> Assertions.assertEquals(2, result.size()))
                 .verifyComplete();
     }
 
@@ -116,7 +114,7 @@ class CreateOrderServiceTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        OrderSummary row1 = OrderSummary.builder()
+        OrderDetail row1 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -130,7 +128,7 @@ class CreateOrderServiceTest {
                 .updatedAt(now)
                 .build();
 
-        OrderSummary row2 = OrderSummary.builder()
+        OrderDetail row2 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -144,27 +142,20 @@ class CreateOrderServiceTest {
                 .updatedAt(now)
                 .build();
 
-        doNothing().when(orderDomainValidator)
-                .validateForCreate(any());
-
-        when(orderRegistrationValidator.validate(any(), any(), anyString()))
-                .thenReturn(Mono.just(33L));
+        doNothing().when(orderDomainValidator).validateForCreate(any());
+        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(33L));
 
         when(orderPersistencePort.save(any()))
                 .thenAnswer(invocation -> {
                     Order orderToSave = invocation.getArgument(0);
                     orderToSave.setId(100L);
-
                     return Mono.just(orderToSave);
                 });
 
-        when(orderPersistencePort.findOrderDetailById(100L))
-                .thenReturn(Flux.just(row1, row2));
+        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(row1, row2));
 
         StepVerifier.create(service.create(command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(2, result.size());
-                })
+                .assertNext(result -> Assertions.assertEquals(2, result.size()))
                 .verifyComplete();
     }
 }

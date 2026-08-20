@@ -49,6 +49,15 @@ public class DishApplicationService {
 
     public Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size,
                                                               String token) {
-        return listDishesUseCase.listByRestaurant(restaurantId, category, page, size, token);
+        return listDishesUseCase.listByRestaurant(restaurantId, category, page, size, token)
+                .map(result -> PagedResponse.<DishResponse>builder()
+                        .content(result.content().stream()
+                                .map(dishDtoMapper::toResponse)
+                                .toList())
+                        .page(result.page())
+                        .size(result.size())
+                        .totalElements(result.totalElements())
+                        .totalPages(result.totalPages())
+                        .build());
     }
 }
