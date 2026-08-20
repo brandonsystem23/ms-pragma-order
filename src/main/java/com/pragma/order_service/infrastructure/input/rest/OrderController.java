@@ -33,6 +33,18 @@ public class OrderController {
         return orderApplicationService.create(request, token);
     }
 
+    @PatchMapping("/{orderId}/cancel")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Cancelar pedido", description = "Permite cancelar un pedido en estado PENDIENTE. Requiere rol CLIENTE")
+    public Mono<OrderResponse> cancel(
+            @PathVariable Long orderId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return orderApplicationService.cancel(orderId, token);
+    }
+
+
     @PatchMapping("/{orderId}/assign")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Asignar pedido", description = "Permite asignarse un pedido con estado PENDIENTE. Requiere rol EMPLEADO")

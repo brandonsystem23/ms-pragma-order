@@ -72,6 +72,10 @@ public final class DomainErrorMessages {
     public static final String ORDER_DELIVER_PIN_REQUIRED = "El PIN de seguridad es obligatorio";
     public static final String ORDER_DELIVER_INVALID_PIN = "El PIN de seguridad es inválido";
     public static final String ORDER_DELIVER_NOT_ASSIGNED_EMPLOYEE = "No puedes entregar un pedido que no tienes asignado";
+    public static final String ORDER_CANCEL_ACCESS_DENIED = "No tienes permisos para cancelar pedidos";
+    public static final String ORDER_CANCEL_NOT_CREATED = "No puedes cancelar un pedido de otro cliente";
+    public static final String ORDER_CANCEL_INVALID_STATUS = "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse";
+
 
     public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
     public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";
