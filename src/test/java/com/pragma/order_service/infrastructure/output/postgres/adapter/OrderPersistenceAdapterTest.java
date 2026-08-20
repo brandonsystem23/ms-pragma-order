@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.output.postgres.adapter;
 
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderItem;
+import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.infrastructure.output.postgres.entity.OrderEntity;
 import com.pragma.order_service.infrastructure.output.postgres.entity.OrderItemEntity;
 import com.pragma.order_service.infrastructure.output.postgres.mapper.OrderEntityMapper;
@@ -247,7 +248,42 @@ class OrderPersistenceAdapterTest {
                 .updatedAt(now)
                 .build();
 
+
+
+        OrderDetail detail1 = OrderDetail.builder()
+                .orderId(100L)
+                .customerId(20L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderDetail detail2 = OrderDetail.builder()
+                .orderId(100L)
+                .customerId(20L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .dishId(11L)
+                .dishName("Lomo saltado")
+                .quantity(BigDecimal.ONE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
         when(orderRepository.findOrderDetailById(100L)).thenReturn(Flux.just(row1, row2));
+        when(orderEntityMapper.toOrderDetail(any()))
+                .thenReturn(detail1)
+                .thenReturn(detail2);
 
         StepVerifier.create(orderPersistenceAdapter.findOrderDetailById(100L))
                 .assertNext(result -> {
@@ -261,6 +297,7 @@ class OrderPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
 
     @Test
     void shouldCountOrdersByRestaurantIdAndStatusSuccessfully() {
@@ -302,8 +339,25 @@ class OrderPersistenceAdapterTest {
                 .updatedAt(now)
                 .build();
 
+        OrderDetail detail = OrderDetail.builder()
+                .orderId(100L)
+                .customerId(20L)
+                .customerName("Juan Perez")
+                .restaurantId(1L)
+                .restaurantName("El Buen Sabor")
+                .status("EN_PREPARACION")
+                .employeeAssignedId(30L)
+                .dishId(10L)
+                .dishName("Pizza")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
         when(orderRepository.findOrdersDetailByIds(List.of(100L)))
                 .thenReturn(Flux.just(row));
+
+        when(orderEntityMapper.toOrderDetail(any())).thenReturn(detail);
 
         StepVerifier.create(orderPersistenceAdapter.findOrdersDetailByIds(List.of(100L)))
                 .assertNext(result -> {
@@ -313,6 +367,7 @@ class OrderPersistenceAdapterTest {
                 })
                 .verifyComplete();
     }
+
 
     @Test
     void shouldFindOrdersDetailByIdsEmpty() {

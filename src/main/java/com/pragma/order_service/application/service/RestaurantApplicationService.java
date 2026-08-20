@@ -28,6 +28,15 @@ public class RestaurantApplicationService {
     }
 
     public Mono<PagedResponse<RestaurantListItemResponse>> list(String token, int page, int size) {
-        return listRestaurantsUseCase.list(token, page, size);
+        return listRestaurantsUseCase.list(token, page, size)
+                .map(result -> PagedResponse.<RestaurantListItemResponse>builder()
+                        .content(result.content().stream()
+                                .map(restaurantDtoMapper::toResponse)
+                                .toList())
+                        .page(result.page())
+                        .size(result.size())
+                        .totalElements(result.totalElements())
+                        .totalPages(result.totalPages())
+                        .build());
     }
 }

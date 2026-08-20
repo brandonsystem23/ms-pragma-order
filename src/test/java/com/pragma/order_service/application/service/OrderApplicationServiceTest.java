@@ -4,14 +4,16 @@ import com.pragma.order_service.application.dto.request.CreateOrderItemRequest;
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
-import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
+import com.pragma.order_service.domain.model.query.OrderDetail;
+import com.pragma.order_service.domain.model.query.OrderItemQueryModel;
+import com.pragma.order_service.domain.model.query.OrderQueryModel;
+import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,10 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,10 +66,9 @@ class OrderApplicationServiceTest {
                 )
         );
 
-
         LocalDateTime now = LocalDateTime.now();
 
-        OrderSummary row1 = OrderSummary.builder()
+        OrderDetail row1 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -84,7 +82,7 @@ class OrderApplicationServiceTest {
                 .updatedAt(now)
                 .build();
 
-        OrderSummary row2 = OrderSummary.builder()
+        OrderDetail row2 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -122,15 +120,9 @@ class OrderApplicationServiceTest {
                 .updatedAt(now)
                 .build();
 
-        when(orderDtoMapper.toCommand(any()))
-                .thenReturn(command);
-
-        when(orderDtoMapper.toResponse(any(), anyList()))
-                .thenReturn(orderResponse);
-
-        when(orderDtoMapper.toItemResponse(any()))
-                .thenReturn(itemResponse1)
-                .thenReturn(itemResponse2);
+        when(orderDtoMapper.toCommand(any())).thenReturn(command);
+        when(orderDtoMapper.toResponse(any(), anyList())).thenReturn(orderResponse);
+        when(orderDtoMapper.toItemResponse(any())).thenReturn(itemResponse1).thenReturn(itemResponse2);
         when(createOrderUseCase.create(any(), anyString())).thenReturn(Mono.just(List.of(row1, row2)));
 
         StepVerifier.create(orderApplicationService.create(request, "token-test"))
@@ -142,11 +134,9 @@ class OrderApplicationServiceTest {
                     Assertions.assertEquals("El buen sabor", result.nameRestaurant());
                     Assertions.assertEquals("PENDIENTE", result.status());
                     Assertions.assertEquals(2, result.items().size());
-
                     Assertions.assertEquals(10L, result.items().getFirst().dishId());
                     Assertions.assertEquals("Hamburguesa triple", result.items().get(0).name());
                     Assertions.assertEquals(BigDecimal.valueOf(2), result.items().get(0).quantity());
-
                     Assertions.assertEquals(11L, result.items().get(1).dishId());
                     Assertions.assertEquals("Lomo saltado", result.items().get(1).name());
                     Assertions.assertEquals(BigDecimal.ONE, result.items().get(1).quantity());
@@ -156,15 +146,16 @@ class OrderApplicationServiceTest {
 
     @Test
     void shouldListOrdersSuccessfully() {
-        OrderResponse orderResponse = OrderResponse.builder()
+        OrderQueryModel orderQueryModel = OrderQueryModel.builder()
                 .id(100L)
                 .customerId(20L)
                 .nameCustomer("Juan Perez")
                 .restaurantId(1L)
                 .nameRestaurant("El Buen Sabor")
                 .status("PENDIENTE")
+                .employeeAssignedId(null)
                 .items(List.of(
-                        OrderItemResponse.builder()
+                        OrderItemQueryModel.builder()
                                 .dishId(10L)
                                 .name("Pizza")
                                 .quantity(BigDecimal.valueOf(2))
@@ -174,16 +165,37 @@ class OrderApplicationServiceTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        PagedResponse<OrderResponse> pagedResponse = PagedResponse.<OrderResponse>builder()
-                .content(List.of(orderResponse))
+        PageResult<OrderQueryModel> pageResult = PageResult.<OrderQueryModel>builder()
+                .content(List.of(orderQueryModel))
                 .page(0)
                 .size(10)
                 .totalElements(1L)
                 .totalPages(1)
                 .build();
 
+        OrderItemResponse itemResponse1 = OrderItemResponse.builder()
+                .dishId(10L)
+                .name("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .build();
+
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(100L)
+                .customerId(50L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("PENDIENTE")
+                .employeeAssignedId(30L)
+                .items(List.of(itemResponse1))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
         when(listOrdersUseCase.list(anyString(), any(), anyInt(), anyInt()))
-                .thenReturn(Mono.just(pagedResponse));
+                .thenReturn(Mono.just(pageResult));
+
+        when(orderDtoMapper.toResponse(any(OrderQueryModel.class))).thenReturn(orderResponse);
 
         StepVerifier.create(orderApplicationService.list("token-test", "PENDIENTE", 0, 10))
                 .assertNext(response -> {
@@ -199,7 +211,7 @@ class OrderApplicationServiceTest {
     void shouldAssignOrderSuccessfully() {
         LocalDateTime now = LocalDateTime.now();
 
-        OrderSummary row1 = OrderSummary.builder()
+        OrderDetail row1 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -214,7 +226,7 @@ class OrderApplicationServiceTest {
                 .updatedAt(now)
                 .build();
 
-        OrderSummary row2 = OrderSummary.builder()
+        OrderDetail row2 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(50L)
                 .customerName("Brandon Briones")
@@ -273,22 +285,14 @@ class OrderApplicationServiceTest {
                     Assertions.assertEquals("El buen sabor", result.nameRestaurant());
                     Assertions.assertEquals("EN_PREPARACION", result.status());
                     Assertions.assertEquals(30L, result.employeeAssignedId());
-
                     Assertions.assertEquals(2, result.items().size());
-
                     Assertions.assertEquals(10L, result.items().getFirst().dishId());
-                    Assertions.assertEquals("Hamburguesa triple",
-                            result.items().getFirst().name());
-                    Assertions.assertEquals(BigDecimal.valueOf(2),
-                            result.items().getFirst().quantity());
-
+                    Assertions.assertEquals("Hamburguesa triple", result.items().getFirst().name());
+                    Assertions.assertEquals(BigDecimal.valueOf(2), result.items().getFirst().quantity());
                     Assertions.assertEquals(11L, result.items().get(1).dishId());
-                    Assertions.assertEquals("Lomo saltado",
-                            result.items().get(1).name());
-                    Assertions.assertEquals(BigDecimal.ONE,
-                            result.items().get(1).quantity());
+                    Assertions.assertEquals("Lomo saltado", result.items().get(1).name());
+                    Assertions.assertEquals(BigDecimal.ONE, result.items().get(1).quantity());
                 })
                 .verifyComplete();
     }
-
 }

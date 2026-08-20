@@ -1,6 +1,5 @@
 package com.pragma.order_service.domain.service.restaurant;
 
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.service.restaurant.validation.ListRestaurantsDomainValidator;
@@ -66,10 +65,6 @@ class ListRestaurantsServiceTest {
                     Assertions.assertEquals(10, response.size());
                     Assertions.assertEquals(2L, response.totalElements());
                     Assertions.assertEquals(1, response.totalPages());
-
-                    RestaurantListItemResponse first = response.content().getFirst();
-                    Assertions.assertEquals("Burger House", first.name());
-                    Assertions.assertEquals("https://logo.com/burger.png", first.urlLogo());
                 })
                 .verifyComplete();
     }

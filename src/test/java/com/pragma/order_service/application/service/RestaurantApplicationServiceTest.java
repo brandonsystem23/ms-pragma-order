@@ -1,12 +1,13 @@
 package com.pragma.order_service.application.service;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
-import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
+import com.pragma.order_service.domain.model.query.PageResult;
+import com.pragma.order_service.domain.model.query.RestaurantListItem;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
 import org.junit.jupiter.api.Assertions;
@@ -85,10 +86,8 @@ class RestaurantApplicationServiceTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(createRestaurantUseCase.create(any(), anyString()))
-                .thenReturn(Mono.just(restaurant));
-
-        when(restaurantDtoMapper.toResponse(any())).thenReturn(restaurantResponse);
+        when(createRestaurantUseCase.create(any(), anyString())).thenReturn(Mono.just(restaurant));
+        when(restaurantDtoMapper.toResponse(any(Restaurant.class))).thenReturn(restaurantResponse);
         when(restaurantDtoMapper.toCommand(any())).thenReturn(command);
 
         StepVerifier.create(restaurantApplicationService.create(request, "token-test"))
@@ -104,9 +103,10 @@ class RestaurantApplicationServiceTest {
 
     @Test
     void shouldListRestaurantsSuccessfully() {
-        PagedResponse<RestaurantListItemResponse> pagedResponse = PagedResponse.<RestaurantListItemResponse>builder()
+        PageResult<RestaurantListItem> pageResult = PageResult.<RestaurantListItem>builder()
                 .content(List.of(
-                        RestaurantListItemResponse.builder()
+                        RestaurantListItem.builder()
+                                .id(1L)
                                 .name("Burger House")
                                 .urlLogo("https://logo.com/burger.png")
                                 .build()
@@ -117,8 +117,15 @@ class RestaurantApplicationServiceTest {
                 .totalPages(1)
                 .build();
 
+        RestaurantListItemResponse restaurant = RestaurantListItemResponse.builder()
+                .id(1L)
+                .name("Burger House")
+                .urlLogo("https://example.com/logo.png")
+                .build();
+
         when(listRestaurantsUseCase.list(anyString(), anyInt(), anyInt()))
-                .thenReturn(Mono.just(pagedResponse));
+                .thenReturn(Mono.just(pageResult));
+        when(restaurantDtoMapper.toResponse(any(RestaurantListItem.class))).thenReturn(restaurant);
 
         StepVerifier.create(restaurantApplicationService.list("token-test", 0, 10))
                 .assertNext(response -> {
