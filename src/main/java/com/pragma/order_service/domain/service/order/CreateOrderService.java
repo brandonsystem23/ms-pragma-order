@@ -4,11 +4,11 @@ import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderItem;
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
+import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -22,8 +22,7 @@ public class CreateOrderService implements CreateOrderUseCase {
     private final OrderDomainValidator orderDomainValidator;
 
     @Override
-    public
-    Mono<List<OrderSummary>> create(CreateOrderCommand command, String token) {
+    public Mono<List<OrderDetail>> create(CreateOrderCommand command, String token) {
         return Mono.defer(() -> {
             orderDomainValidator.validateForCreate(command);
 

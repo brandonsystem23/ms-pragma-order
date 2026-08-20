@@ -1,10 +1,10 @@
 package com.pragma.order_service.domain.service.order;
 
+import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -18,7 +18,7 @@ public class AssignOrderService implements AssignOrderUseCase {
     private final AssignOrderDomainValidator assignOrderDomainValidator;
 
     @Override
-    public Mono<List<OrderSummary>> assign(Long orderId, String token) {
+    public Mono<List<OrderDetail>> assign(Long orderId, String token) {
         return Mono.defer(() -> {
             assignOrderDomainValidator.validate(orderId);
 
