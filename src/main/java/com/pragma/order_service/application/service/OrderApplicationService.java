@@ -7,6 +7,7 @@ import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
+import com.pragma.order_service.domain.port.in.CancelOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.DeliverOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
@@ -27,6 +28,8 @@ public class OrderApplicationService {
     private final ListOrdersUseCase listOrdersUseCase;
     private final MarkOrderReadyUseCase markOrderReadyUseCase;
     private final DeliverOrderUseCase deliverOrderUseCase;
+    private final CancelOrderUseCase cancelOrderUseCase;
+
 
     public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
         return createOrderUseCase.create(orderDtoMapper.toCommand(request), token)
@@ -47,6 +50,12 @@ public class OrderApplicationService {
         return deliverOrderUseCase.deliver(orderId, pin, token)
                 .map(this::toOrderResponse);
     }
+
+    public Mono<OrderResponse> cancel(Long orderId, String token) {
+        return cancelOrderUseCase.cancel(orderId, token)
+                .map(this::toOrderResponse);
+    }
+
 
     public Mono<PagedResponse<OrderResponse>> list(String token, String status, int page, int size) {
         return listOrdersUseCase.list(token, status, page, size)

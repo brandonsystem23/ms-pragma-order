@@ -225,5 +225,38 @@ class OrderControllerTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldCancelOrderSuccessfully() {
+        OrderResponse response = OrderResponse.builder()
+                .id(100L)
+                .customerId(20L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("CANCELADO")
+                .employeeAssignedId(null)
+                .items(List.of(
+                        OrderItemResponse.builder()
+                                .dishId(10L)
+                                .name("Hamburguesa triple")
+                                .quantity(BigDecimal.valueOf(2))
+                                .build()
+                ))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(orderApplicationService.cancel(anyLong(), anyString())).thenReturn(Mono.just(response));
+
+        StepVerifier.create(orderController.cancel(100L, "Bearer token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("CANCELADO", result.status());
+                    Assertions.assertEquals(20L, result.customerId());
+                })
+                .verifyComplete();
+    }
+
+
 
 }

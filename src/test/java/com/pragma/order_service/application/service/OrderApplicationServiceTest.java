@@ -12,6 +12,7 @@ import com.pragma.order_service.domain.model.query.OrderItemQueryModel;
 import com.pragma.order_service.domain.model.query.OrderQueryModel;
 import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
+import com.pragma.order_service.domain.port.in.CancelOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.DeliverOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
@@ -52,6 +53,9 @@ class OrderApplicationServiceTest {
 
     @Mock
     private DeliverOrderUseCase deliverOrderUseCase;
+
+    @Mock
+    private CancelOrderUseCase cancelOrderUseCase;
 
     @InjectMocks
     private OrderApplicationService orderApplicationService;
@@ -410,5 +414,59 @@ class OrderApplicationServiceTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldCancelOrderSuccessfully() {
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderDetail row1 = OrderDetail.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("CANCELADO")
+                .employeeAssignedId(null)
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderItemResponse itemResponse1 = OrderItemResponse.builder()
+                .dishId(10L)
+                .name("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .build();
+
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(100L)
+                .customerId(50L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("CANCELADO")
+                .employeeAssignedId(null)
+                .items(List.of(itemResponse1))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        when(cancelOrderUseCase.cancel(100L, "token-test"))
+                .thenReturn(Mono.just(List.of(row1)));
+
+        when(orderDtoMapper.toItemResponse(any())).thenReturn(itemResponse1);
+        when(orderDtoMapper.toResponse(any(), anyList())).thenReturn(orderResponse);
+
+        StepVerifier.create(orderApplicationService.cancel(100L, "token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("CANCELADO", result.status());
+                    Assertions.assertEquals(50L, result.customerId());
+                })
+                .verifyComplete();
+    }
+
 
 }
