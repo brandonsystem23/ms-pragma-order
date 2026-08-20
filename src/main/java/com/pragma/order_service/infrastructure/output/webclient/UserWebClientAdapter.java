@@ -3,6 +3,7 @@ package com.pragma.order_service.infrastructure.output.webclient;
 import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.infrastructure.exception.ExternalServiceException;
+import com.pragma.order_service.infrastructure.output.webclient.dto.UserResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,7 @@ public class UserWebClientAdapter implements UserWebClientPort {
     }
 
     @Override
-    public Mono<UserSummary> findById(Long userId, String token) {
+    public Mono<UserResponse> findById(Long userId, String token) {
 
         Map<String, String> mapHeaders = new HashMap<>();
         mapHeaders.put(HttpHeaders.AUTHORIZATION, "Bearer " + token);
@@ -51,7 +52,7 @@ public class UserWebClientAdapter implements UserWebClientPort {
                                                 HttpStatus.valueOf(clientResponse.statusCode().value()), message))
                                 )
                 )
-                .bodyToMono(UserSummary.class)
+                .bodyToMono(UserResponse.class)
                 .retry(2);
     }
 

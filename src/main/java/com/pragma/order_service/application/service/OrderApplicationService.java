@@ -9,6 +9,7 @@ import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
+import com.pragma.order_service.domain.port.in.MarkOrderReadyUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -23,6 +24,7 @@ public class OrderApplicationService {
     private final AssignOrderUseCase assignOrderUseCase;
     private final OrderDtoMapper orderDtoMapper;
     private final ListOrdersUseCase listOrdersUseCase;
+    private final MarkOrderReadyUseCase markOrderReadyUseCase;
 
     public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
         return createOrderUseCase.create(orderDtoMapper.toCommand(request), token)
@@ -31,6 +33,11 @@ public class OrderApplicationService {
 
     public Mono<OrderResponse> assign(Long orderId, String token) {
         return assignOrderUseCase.assign(orderId, token)
+                .map(this::toOrderResponse);
+    }
+
+    public Mono<OrderResponse> markReady(Long orderId, String token) {
+        return markOrderReadyUseCase.markReady(orderId, token)
                 .map(this::toOrderResponse);
     }
 

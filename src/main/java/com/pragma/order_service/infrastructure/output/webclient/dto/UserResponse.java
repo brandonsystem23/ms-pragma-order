@@ -1,9 +1,10 @@
-package com.pragma.order_service.domain.model;
+package com.pragma.order_service.infrastructure.output.webclient.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-public record UserSummary(
+public record UserResponse(
 
         Long id,
         String firstName,
@@ -11,6 +12,7 @@ public record UserSummary(
         String email,
         String phone,
         Boolean status,
+        @JsonProperty("role")
         String roleName
 ) {
 }

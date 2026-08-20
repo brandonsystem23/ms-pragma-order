@@ -7,9 +7,11 @@ import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.port.in.ListDishesUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
+import com.pragma.order_service.domain.port.in.MarkOrderReadyUseCase;
 import com.pragma.order_service.domain.port.in.UpdateDishUseCase;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
+import com.pragma.order_service.domain.port.out.NotificationWebClientPort;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
@@ -25,9 +27,11 @@ import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistr
 import com.pragma.order_service.domain.service.order.AssignOrderService;
 import com.pragma.order_service.domain.service.order.CreateOrderService;
 import com.pragma.order_service.domain.service.order.ListOrdersService;
+import com.pragma.order_service.domain.service.order.MarkOrderReadyService;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
+import com.pragma.order_service.domain.service.order.validation.MarkOrderReadyValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRegistrationValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRetrieveValidator;
@@ -278,5 +282,35 @@ public class BeanConfiguration {
                 listOrdersDomainValidator
         );
     }
+
+
+    @Bean
+    public MarkOrderReadyValidator markOrderReadyValidator(
+            AuthSessionPort authSessionPort,
+            OrderPersistencePort orderPersistencePort
+    ) {
+        return new MarkOrderReadyValidator(
+                authSessionPort,
+                orderPersistencePort
+        );
+    }
+
+    @Bean
+    public MarkOrderReadyUseCase markOrderReadyUseCase(
+            OrderPersistencePort orderPersistencePort,
+            MarkOrderReadyValidator markOrderReadyValidator,
+            AssignOrderDomainValidator assignOrderDomainValidator,
+            UserWebClientPort userWebClientPort,
+            NotificationWebClientPort notificationWebClientPort
+    ) {
+        return new MarkOrderReadyService(
+                orderPersistencePort,
+                markOrderReadyValidator,
+                assignOrderDomainValidator,
+                userWebClientPort,
+                notificationWebClientPort
+        );
+    }
+
 
 }

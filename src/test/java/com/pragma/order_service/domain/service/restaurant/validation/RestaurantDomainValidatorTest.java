@@ -111,7 +111,7 @@ class RestaurantDomainValidatorTest {
         );
 
         DomainException ex = assertThrows(DomainException.class, () -> validator.validateForCreate(command));
-        assertEquals("El campo phone es obligatorio", ex.getMessage());
+        assertEquals("El campo phoneNumber es obligatorio", ex.getMessage());
     }
 
     @Test
@@ -126,7 +126,7 @@ class RestaurantDomainValidatorTest {
         );
 
         DomainException ex = assertThrows(DomainException.class, () -> validator.validateForCreate(command));
-        assertEquals("El phone no puede tener más de 13 caracteres", ex.getMessage());
+        assertEquals("El phoneNumber no puede tener más de 13 caracteres", ex.getMessage());
     }
 
     @Test
@@ -141,7 +141,7 @@ class RestaurantDomainValidatorTest {
         );
 
         DomainException ex = assertThrows(DomainException.class, () -> validator.validateForCreate(command));
-        assertEquals("El phone solo puede contener números y opcionalmente iniciar con +", ex.getMessage());
+        assertEquals("El phoneNumber solo puede contener números y opcionalmente iniciar con +", ex.getMessage());
     }
 
     @Test

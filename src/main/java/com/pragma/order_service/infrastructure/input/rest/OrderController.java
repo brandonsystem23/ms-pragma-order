@@ -43,6 +43,17 @@ public class OrderController {
         return orderApplicationService.assign(orderId, token);
     }
 
+    @PatchMapping("/{orderId}/ready")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Asignar estado LISTO a pedido", description = "Marca un pedido como LISTO y enviar notificacion. Requiere rol EMPLEADO")
+    public Mono<OrderResponse> markReady(
+            @PathVariable Long orderId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return orderApplicationService.markReady(orderId, token);
+    }
+
     @GetMapping("/list")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Listar pedidos", description = "Lista pedidos del restaurante asociado al empleado. Requiere rol EMPLEADO")
