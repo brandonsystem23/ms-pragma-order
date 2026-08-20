@@ -1,6 +1,7 @@
 package com.pragma.order_service.infrastructure.configuration;
 
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
+import com.pragma.order_service.domain.port.in.CancelOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
@@ -27,12 +28,14 @@ import com.pragma.order_service.domain.service.dish.validation.ListDishesDomainV
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainValidator;
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
 import com.pragma.order_service.domain.service.order.AssignOrderService;
+import com.pragma.order_service.domain.service.order.CancelOrderService;
 import com.pragma.order_service.domain.service.order.CreateOrderService;
 import com.pragma.order_service.domain.service.order.DeliverOrderService;
 import com.pragma.order_service.domain.service.order.ListOrdersService;
 import com.pragma.order_service.domain.service.order.MarkOrderReadyService;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
+import com.pragma.order_service.domain.service.order.validation.CancelOrderValidator;
 import com.pragma.order_service.domain.service.order.validation.DeliverOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.DeliverOrderValidator;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
@@ -347,6 +350,32 @@ public class BeanConfiguration {
                 deliverOrderDomainValidator
         );
     }
+
+
+    @Bean
+    public CancelOrderValidator cancelOrderValidator(
+            AuthSessionPort authSessionPort,
+            OrderPersistencePort orderPersistencePort
+    ) {
+        return new CancelOrderValidator(
+                authSessionPort,
+                orderPersistencePort
+        );
+    }
+
+    @Bean
+    public CancelOrderUseCase cancelOrderUseCase(
+            OrderPersistencePort orderPersistencePort,
+            CancelOrderValidator cancelOrderValidator,
+            AssignOrderDomainValidator cancelOrderDomainValidator
+    ) {
+        return new CancelOrderService(
+                orderPersistencePort,
+                cancelOrderValidator,
+                cancelOrderDomainValidator
+        );
+    }
+
 
 
 
