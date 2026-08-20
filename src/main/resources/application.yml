@@ -26,6 +26,10 @@ clients:
   users:
     base-url: ${USERS_SERVICE_URL:http://localhost:8081}
     path: /api/v1/users/find
+  notifications:
+    base-url: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8082}
+    path: /api/v1/notifications/send
+
 
 logging:
   level:

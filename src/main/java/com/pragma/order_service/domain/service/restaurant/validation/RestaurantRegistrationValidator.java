@@ -58,6 +58,15 @@ public class RestaurantRegistrationValidator {
 
     private Mono<Void> validateOwner(Long ownerId, String token) {
         return userWebClientPort.findById(ownerId, token)
+                .map(userResponse -> UserSummary.builder()
+                        .id(userResponse.id())
+                        .firstName(userResponse.firstName())
+                        .lastName(userResponse.lastName())
+                        .email(userResponse.email())
+                        .phone(userResponse.phone())
+                        .status(userResponse.status())
+                        .roleName(userResponse.roleName())
+                        .build())
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.OWNER_NOT_FOUND,
                         DomainErrorMessages.OWNER_NOT_FOUND

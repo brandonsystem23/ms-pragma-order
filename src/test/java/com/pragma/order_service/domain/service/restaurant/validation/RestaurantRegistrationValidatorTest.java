@@ -1,11 +1,11 @@
 package com.pragma.order_service.domain.service.restaurant.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
-import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
+import com.pragma.order_service.infrastructure.output.webclient.dto.UserResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,11 +43,12 @@ class RestaurantRegistrationValidatorTest {
                 .role("ADMINISTRADOR")
                 .build();
 
-        UserSummary owner = UserSummary.builder()
+        UserResponse owner = UserResponse.builder()
                 .id(2L)
                 .status(true)
                 .roleName("PROPIETARIO")
                 .build();
+
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
         when(restaurantPersistencePort.existsByNit(anyString())).thenReturn(Mono.just(false));
@@ -135,7 +136,7 @@ class RestaurantRegistrationValidatorTest {
                 .role("ADMINISTRADOR")
                 .build();
 
-        UserSummary owner = UserSummary.builder()
+        UserResponse owner = UserResponse.builder()
                 .id(2L)
                 .status(false)
                 .roleName("PROPIETARIO")
@@ -160,7 +161,7 @@ class RestaurantRegistrationValidatorTest {
                 .role("ADMINISTRADOR")
                 .build();
 
-        UserSummary owner = UserSummary.builder()
+        UserResponse owner = UserResponse.builder()
                 .id(2L)
                 .status(true)
                 .roleName("CLIENTE")

@@ -14,6 +14,7 @@ import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
+import com.pragma.order_service.domain.port.in.MarkOrderReadyUseCase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +45,10 @@ class OrderApplicationServiceTest {
 
     @Mock
     private AssignOrderUseCase assignOrderUseCase;
+
+    @Mock
+    private MarkOrderReadyUseCase markOrderReadyUseCase;
+
 
     @InjectMocks
     private OrderApplicationService orderApplicationService;
@@ -292,6 +297,60 @@ class OrderApplicationServiceTest {
                     Assertions.assertEquals(11L, result.items().get(1).dishId());
                     Assertions.assertEquals("Lomo saltado", result.items().get(1).name());
                     Assertions.assertEquals(BigDecimal.ONE, result.items().get(1).quantity());
+
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldMarkOrderReadySuccessfully() {
+        LocalDateTime now = LocalDateTime.now();
+
+        OrderDetail row1 = OrderDetail.builder()
+                .orderId(100L)
+                .customerId(50L)
+                .customerName("Brandon Briones")
+                .restaurantId(1L)
+                .restaurantName("El buen sabor")
+                .status("LISTO")
+                .employeeAssignedId(30L)
+                .dishId(10L)
+                .dishName("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        OrderItemResponse itemResponse1 = OrderItemResponse.builder()
+                .dishId(10L)
+                .name("Hamburguesa triple")
+                .quantity(BigDecimal.valueOf(2))
+                .build();
+
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(100L)
+                .customerId(50L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("LISTO")
+                .employeeAssignedId(30L)
+                .items(List.of(itemResponse1))
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        when(markOrderReadyUseCase.markReady(100L, "token-test"))
+                .thenReturn(Mono.just(List.of(row1)));
+
+        when(orderDtoMapper.toItemResponse(any())).thenReturn(itemResponse1);
+        when(orderDtoMapper.toResponse(any(), anyList())).thenReturn(orderResponse);
+
+        StepVerifier.create(orderApplicationService.markReady(100L, "token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("LISTO", result.status());
+                    Assertions.assertEquals(30L, result.employeeAssignedId());
                 })
                 .verifyComplete();
     }

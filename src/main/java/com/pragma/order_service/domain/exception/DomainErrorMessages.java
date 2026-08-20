@@ -11,9 +11,9 @@ public final class DomainErrorMessages {
 
     public static final String ADDRESS_REQUIRED = "El campo address es obligatorio";
 
-    public static final String PHONE_REQUIRED = "El campo phone es obligatorio";
-    public static final String PHONE_MAX_LENGTH = "El phone no puede tener más de 13 caracteres";
-    public static final String PHONE_INVALID = "El phone solo puede contener números y opcionalmente iniciar con +";
+    public static final String PHONE_REQUIRED = "El campo phoneNumber es obligatorio";
+    public static final String PHONE_MAX_LENGTH = "El phoneNumber no puede tener más de 13 caracteres";
+    public static final String PHONE_INVALID = "El phoneNumber solo puede contener números y opcionalmente iniciar con +";
 
     public static final String URL_LOGO_REQUIRED = "El campo urlLogo es obligatorio";
 
@@ -64,6 +64,10 @@ public final class DomainErrorMessages {
     public static final String ORDER_ASSIGN_INVALID_STATUS = "Solo se pueden asignar pedidos en estado PENDIENTE";
     public static final String ORDER_ALREADY_ASSIGNED = "El pedido ya tiene un empleado asignado";
     public static final String ORDER_ASSIGN_DIFFERENT_RESTAURANT = "No puedes asignarte pedidos de otro restaurante";
+    public static final String ORDER_READY_ACCESS_DENIED = "No tienes permisos para marcar pedidos como listos";
+    public static final String ORDER_READY_INVALID_STATUS = "Solo se pueden marcar como listos pedidos en estado EN_PREPARACION";
+    public static final String ORDER_READY_NOT_ASSIGNED_EMPLOYEE = "No puedes marcar como listo un pedido que no tienes asignado";
+
 
     public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
     public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";

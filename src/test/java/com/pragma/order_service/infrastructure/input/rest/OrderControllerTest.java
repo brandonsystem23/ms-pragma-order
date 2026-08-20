@@ -157,4 +157,37 @@ class OrderControllerTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldMarkOrderReadySuccessfully() {
+        OrderResponse response = OrderResponse.builder()
+                .id(100L)
+                .customerId(20L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("LISTO")
+                .employeeAssignedId(30L)
+                .items(List.of(
+                        OrderItemResponse.builder()
+                                .dishId(10L)
+                                .name("Hamburguesa triple")
+                                .quantity(BigDecimal.valueOf(2))
+                                .build()
+                ))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(orderApplicationService.markReady(anyLong(), anyString())).thenReturn(Mono.just(response));
+
+        StepVerifier.create(orderController.markReady(100L, "Bearer token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("LISTO", result.status());
+                    Assertions.assertEquals(30L, result.employeeAssignedId());
+                })
+                .verifyComplete();
+    }
+
 }
