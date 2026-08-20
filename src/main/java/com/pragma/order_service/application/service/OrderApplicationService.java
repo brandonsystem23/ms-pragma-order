@@ -56,7 +56,6 @@ public class OrderApplicationService {
 
     private OrderResponse toOrderResponse(List<OrderDetail> orderDetails) {
         OrderDetail orderDetail = orderDetails.getFirst();
-
         List<OrderItemResponse> items = orderDetails.stream()
                 .map(orderDtoMapper::toItemResponse)
                 .toList();

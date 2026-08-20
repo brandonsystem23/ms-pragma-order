@@ -297,6 +297,7 @@ class OrderApplicationServiceTest {
                     Assertions.assertEquals(11L, result.items().get(1).dishId());
                     Assertions.assertEquals("Lomo saltado", result.items().get(1).name());
                     Assertions.assertEquals(BigDecimal.ONE, result.items().get(1).quantity());
+
                 })
                 .verifyComplete();
     }
@@ -353,5 +354,4 @@ class OrderApplicationServiceTest {
                 })
                 .verifyComplete();
     }
-
 }
