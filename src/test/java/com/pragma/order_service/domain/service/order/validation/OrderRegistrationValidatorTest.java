@@ -2,12 +2,12 @@ package com.pragma.order_service.domain.service.order.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Dish;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +44,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldValidateSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
@@ -102,7 +102,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenRoleIsNotClient() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("PROPIETARIO")
                 .build();
@@ -123,7 +123,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenCustomerHasActiveOrder() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
@@ -145,7 +145,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenRestaurantDoesNotExist() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
@@ -168,7 +168,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenDishDoesNotExist() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
@@ -192,7 +192,7 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenDishBelongsToAnotherRestaurant() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();

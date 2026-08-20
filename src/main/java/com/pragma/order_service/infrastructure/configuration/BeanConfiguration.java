@@ -4,6 +4,7 @@ import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateDishUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateRestaurantUseCase;
+import com.pragma.order_service.domain.port.in.DeliverOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListDishesUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.in.ListRestaurantsUseCase;
@@ -13,6 +14,7 @@ import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.port.out.NotificationWebClientPort;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
+import com.pragma.order_service.domain.port.out.OrderPinValidationPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
 import com.pragma.order_service.domain.service.dish.CreateDishService;
@@ -26,10 +28,13 @@ import com.pragma.order_service.domain.service.dish.validation.UpdateDishDomainV
 import com.pragma.order_service.domain.service.dish.validation.UpdateDishRegistrationValidator;
 import com.pragma.order_service.domain.service.order.AssignOrderService;
 import com.pragma.order_service.domain.service.order.CreateOrderService;
+import com.pragma.order_service.domain.service.order.DeliverOrderService;
 import com.pragma.order_service.domain.service.order.ListOrdersService;
 import com.pragma.order_service.domain.service.order.MarkOrderReadyService;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.AssignOrderValidator;
+import com.pragma.order_service.domain.service.order.validation.DeliverOrderDomainValidator;
+import com.pragma.order_service.domain.service.order.validation.DeliverOrderValidator;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.MarkOrderReadyValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderDomainValidator;
@@ -311,6 +316,38 @@ public class BeanConfiguration {
                 notificationWebClientPort
         );
     }
+
+    @Bean
+    public DeliverOrderDomainValidator deliverOrderDomainValidator() {
+        return new DeliverOrderDomainValidator();
+    }
+
+    @Bean
+    public DeliverOrderValidator deliverOrderValidator(
+            AuthSessionPort authSessionPort,
+            OrderPersistencePort orderPersistencePort,
+            OrderPinValidationPort orderPinValidationPort
+    ) {
+        return new DeliverOrderValidator(
+                authSessionPort,
+                orderPersistencePort,
+                orderPinValidationPort
+        );
+    }
+
+    @Bean
+    public DeliverOrderUseCase deliverOrderUseCase(
+            OrderPersistencePort orderPersistencePort,
+            DeliverOrderValidator deliverOrderValidator,
+            DeliverOrderDomainValidator deliverOrderDomainValidator
+    ) {
+        return new DeliverOrderService(
+                orderPersistencePort,
+                deliverOrderValidator,
+                deliverOrderDomainValidator
+        );
+    }
+
 
 
 }

@@ -1,9 +1,9 @@
 package com.pragma.order_service.domain.port.out;
 
-import com.pragma.order_service.domain.model.auth.AuthSession;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import reactor.core.publisher.Mono;
 
 public interface AuthSessionPort {
 
-    Mono<AuthSession> findByToken(String token);
+    Mono<AuthSessionRedisValue> findByToken(String token);
 }

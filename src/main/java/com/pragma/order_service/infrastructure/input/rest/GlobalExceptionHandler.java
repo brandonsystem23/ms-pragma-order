@@ -51,6 +51,7 @@ public class GlobalExceptionHandler {
                  DUPLICATE_NIT,
                  DUPLICATE_NAME,
                  ACTIVE_ORDER_EXISTS,
+                 INVALID_PIN,
                  INVALID_ORDER_RESTAURANT -> HttpStatus.BAD_REQUEST;
 
             case INVALID_TOKEN -> HttpStatus.UNAUTHORIZED;

@@ -1,6 +1,7 @@
 package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
+import com.pragma.order_service.application.dto.request.DeliverOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.service.OrderApplicationService;
@@ -52,6 +53,18 @@ public class OrderController {
     ) {
         String token = TokenExtractor.extract(authorizationHeader);
         return orderApplicationService.markReady(orderId, token);
+    }
+
+    @PatchMapping("/{orderId}/deliver")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Entregar pedido", description = "Marca un pedido como ENTREGADO validando PIN de seguridad. Requiere rol EMPLEADO")
+    public Mono<OrderResponse> deliver(
+            @PathVariable Long orderId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @RequestBody DeliverOrderRequest request
+    ) {
+        String token = TokenExtractor.extract(authorizationHeader);
+        return orderApplicationService.deliver(orderId, request.pin(), token);
     }
 
     @GetMapping("/list")
