@@ -1,8 +1,8 @@
 package com.pragma.order_service.domain.service.dish;
 
-import com.pragma.order_service.application.dto.response.DishResponse;
-import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.domain.model.Dish;
+import com.pragma.order_service.domain.model.query.DishQueryModel;
+import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.port.in.ListDishesUseCase;
 import com.pragma.order_service.domain.port.out.DishPersistencePort;
 import com.pragma.order_service.domain.service.dish.validation.DishRetrieveValidator;
@@ -19,8 +19,8 @@ public class ListDishesService implements ListDishesUseCase {
     private final ListDishesDomainValidator listDishesDomainValidator;
 
     @Override
-    public Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size,
-                                                              String token) {
+    public Mono<PageResult<DishQueryModel>> listByRestaurant(Long restaurantId, String category, int page, int size,
+                                                             String token) {
         return Mono.defer(() -> {
             listDishesDomainValidator.validate(restaurantId, category, page, size);
             return dishRetrieveValidator.validate(token, restaurantId)
@@ -35,7 +35,7 @@ public class ListDishesService implements ListDishesUseCase {
                         long totalElements = tuple.getT2();
                         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
 
-                        return PagedResponse.<DishResponse>builder()
+                        return PageResult.<DishQueryModel>builder()
                                 .content(content)
                                 .page(page)
                                 .size(size)
@@ -46,8 +46,7 @@ public class ListDishesService implements ListDishesUseCase {
         });
     }
 
-
-    private Flux<DishResponse> getDishes(Long restaurantId, String category, int page, int size) {
+    private Flux<DishQueryModel> getDishes(Long restaurantId, String category, int page, int size) {
 
         Flux<Dish> dishes;
 
@@ -57,7 +56,7 @@ public class ListDishesService implements ListDishesUseCase {
             dishes = dishPersistencePort.findActiveByRestaurantIdAndCategory(restaurantId, category, page, size);
         }
 
-        return dishes.map(dish -> DishResponse.builder()
+        return dishes.map(dish -> DishQueryModel.builder()
                 .id(dish.getId())
                 .name(dish.getName())
                 .price(dish.getPrice())

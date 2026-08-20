@@ -1,13 +1,13 @@
 package com.pragma.order_service.domain.service.order;
 
-import com.pragma.order_service.application.dto.response.OrderItemResponse;
-import com.pragma.order_service.application.dto.response.OrderResponse;
-import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.domain.model.query.OrderDetail;
+import com.pragma.order_service.domain.model.query.OrderItemQueryModel;
+import com.pragma.order_service.domain.model.query.OrderQueryModel;
+import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRetrieveValidator;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +24,7 @@ public class ListOrdersService implements ListOrdersUseCase {
     private final ListOrdersDomainValidator listOrdersDomainValidator;
 
     @Override
-    public Mono<PagedResponse<OrderResponse>> list(String token, String status, int page, int size) {
+    public Mono<PageResult<OrderQueryModel>> list(String token, String status, int page, int size) {
         return Mono.defer(() -> {
             listOrdersDomainValidator.validate(status, page, size);
 
@@ -36,7 +36,7 @@ public class ListOrdersService implements ListOrdersUseCase {
                                             .collectList()
                                             .flatMap(orderIds -> {
                                                 if (orderIds.isEmpty()) {
-                                                    return Mono.just(List.<OrderResponse>of());
+                                                    return Mono.just(List.<OrderQueryModel>of());
                                                 }
 
                                                 return orderPersistencePort.findOrdersDetailByIds(orderIds)
@@ -45,10 +45,10 @@ public class ListOrdersService implements ListOrdersUseCase {
                                             })
                             ).map(tuple -> {
                                 long totalElements = tuple.getT1();
-                                List<OrderResponse> content = tuple.getT2();
+                                List<OrderQueryModel> content = tuple.getT2();
                                 int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
 
-                                return PagedResponse.<OrderResponse>builder()
+                                return PageResult.<OrderQueryModel>builder()
                                         .content(content)
                                         .page(page)
                                         .size(size)
@@ -60,19 +60,19 @@ public class ListOrdersService implements ListOrdersUseCase {
         });
     }
 
-    private List<OrderResponse> mapToOrderResponses(List<OrderSummary> summaries) {
-        Map<Long, List<OrderSummary>> grouped = new LinkedHashMap<>();
+    private List<OrderQueryModel> mapToOrderResponses(List<OrderDetail> summaries) {
+        Map<Long, List<OrderDetail>> grouped = new LinkedHashMap<>();
 
-        for (OrderSummary summary : summaries) {
+        for (OrderDetail summary : summaries) {
             grouped.computeIfAbsent(summary.getOrderId(), key -> new ArrayList<>())
                     .add(summary);
         }
 
         return grouped.values().stream()
-                .map(ordersSummary -> {
-                    OrderSummary order = ordersSummary.getFirst();
+                .map(orderDetails -> {
+                    OrderDetail order = orderDetails.getFirst();
 
-                    return OrderResponse.builder()
+                    return OrderQueryModel.builder()
                             .id(order.getOrderId())
                             .customerId(order.getCustomerId())
                             .nameCustomer(order.getCustomerName())
@@ -80,8 +80,8 @@ public class ListOrdersService implements ListOrdersUseCase {
                             .nameRestaurant(order.getRestaurantName())
                             .status(order.getStatus())
                             .employeeAssignedId(order.getEmployeeAssignedId())
-                            .items(ordersSummary.stream()
-                                    .map(item -> OrderItemResponse.builder()
+                            .items(orderDetails.stream()
+                                    .map(item -> OrderItemQueryModel.builder()
                                             .dishId(item.getDishId())
                                             .name(item.getDishName())
                                             .quantity(item.getQuantity())

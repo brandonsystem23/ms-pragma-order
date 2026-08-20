@@ -1,11 +1,11 @@
 package com.pragma.order_service.domain.service.order;
 
-import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.domain.model.OrderStatus;
+import com.pragma.order_service.domain.model.query.OrderDetail;
+import com.pragma.order_service.domain.model.query.OrderQueryModel;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.service.order.validation.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.service.order.validation.OrderRetrieveValidator;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,10 +19,7 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +42,7 @@ class ListOrdersServiceTest {
     void shouldListOrdersSuccessfully() {
         LocalDateTime now = LocalDateTime.now();
 
-        OrderSummary row1 = OrderSummary.builder()
+        OrderDetail row1 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(20L)
                 .customerName("Juan Perez")
@@ -59,7 +56,7 @@ class ListOrdersServiceTest {
                 .updatedAt(now)
                 .build();
 
-        OrderSummary row2 = OrderSummary.builder()
+        OrderDetail row2 = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(20L)
                 .customerName("Juan Perez")
@@ -90,7 +87,7 @@ class ListOrdersServiceTest {
                     Assertions.assertEquals(0, response.page());
                     Assertions.assertEquals(10, response.size());
 
-                    OrderResponse order = response.content().getFirst();
+                    OrderQueryModel order = response.content().getFirst();
                     Assertions.assertEquals(100L, order.id());
                     Assertions.assertEquals(20L, order.customerId());
                     Assertions.assertEquals("Juan Perez", order.nameCustomer());
@@ -99,7 +96,7 @@ class ListOrdersServiceTest {
                     Assertions.assertEquals(OrderStatus.PENDING, order.status());
                     Assertions.assertEquals(2, order.items().size());
 
-                    Assertions.assertEquals(10L, order.items().get(0).dishId());
+                    Assertions.assertEquals(10L, order.items().getFirst().dishId());
                     Assertions.assertEquals("Pizza", order.items().get(0).name());
                     Assertions.assertEquals(BigDecimal.valueOf(2), order.items().get(0).quantity());
 

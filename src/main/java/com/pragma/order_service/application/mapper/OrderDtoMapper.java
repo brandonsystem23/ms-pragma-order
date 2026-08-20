@@ -4,7 +4,8 @@ import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
-import com.pragma.order_service.infrastructure.output.postgres.model.OrderSummary;
+import com.pragma.order_service.domain.model.query.OrderDetail;
+import com.pragma.order_service.domain.model.query.OrderQueryModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -15,21 +16,22 @@ public interface OrderDtoMapper {
 
     CreateOrderCommand toCommand(CreateOrderRequest request);
 
-    @Mapping(target = "id", source = "orderSummary.orderId")
-    @Mapping(target = "customerId", source = "orderSummary.customerId")
-    @Mapping(target = "nameCustomer", source = "orderSummary.customerName")
-    @Mapping(target = "restaurantId", source = "orderSummary.restaurantId")
-    @Mapping(target = "nameRestaurant", source = "orderSummary.restaurantName")
-    @Mapping(target = "status", source = "orderSummary.status")
-    @Mapping(target = "employeeAssignedId", source = "orderSummary.employeeAssignedId")
+    @Mapping(target = "id", source = "orderDetail.orderId")
+    @Mapping(target = "customerId", source = "orderDetail.customerId")
+    @Mapping(target = "nameCustomer", source = "orderDetail.customerName")
+    @Mapping(target = "restaurantId", source = "orderDetail.restaurantId")
+    @Mapping(target = "nameRestaurant", source = "orderDetail.restaurantName")
+    @Mapping(target = "status", source = "orderDetail.status")
+    @Mapping(target = "employeeAssignedId", source = "orderDetail.employeeAssignedId")
     @Mapping(target = "items", source = "items")
-    @Mapping(target = "createdAt", source = "orderSummary.createdAt")
-    @Mapping(target = "updatedAt", source = "orderSummary.updatedAt")
-    OrderResponse toResponse(OrderSummary orderSummary, List<OrderItemResponse> items);
+    @Mapping(target = "createdAt", source = "orderDetail.createdAt")
+    @Mapping(target = "updatedAt", source = "orderDetail.updatedAt")
+    OrderResponse toResponse(OrderDetail orderDetail, List<OrderItemResponse> items);
 
     @Mapping(target = "dishId", source = "dishId")
     @Mapping(target = "name", source = "dishName")
     @Mapping(target = "quantity", source = "quantity")
-    OrderItemResponse toItemResponse(OrderSummary orderSummary);
+    OrderItemResponse toItemResponse(OrderDetail orderDetail);
 
+    OrderResponse toResponse(OrderQueryModel orderQueryModel);
 }
