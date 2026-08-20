@@ -1,9 +1,9 @@
 package com.pragma.order_service.domain.service.order.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +31,7 @@ class OrderRetrieveValidatorTest {
 
     @Test
     void shouldValidateSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -58,7 +58,7 @@ class OrderRetrieveValidatorTest {
 
     @Test
     void shouldFailWhenRoleIsNotEmployee() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("CLIENTE")
                 .build();
@@ -75,7 +75,7 @@ class OrderRetrieveValidatorTest {
 
     @Test
     void shouldFailWhenEmployeeHasNoRestaurantAssigned() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();

@@ -67,7 +67,11 @@ public final class DomainErrorMessages {
     public static final String ORDER_READY_ACCESS_DENIED = "No tienes permisos para marcar pedidos como listos";
     public static final String ORDER_READY_INVALID_STATUS = "Solo se pueden marcar como listos pedidos en estado EN_PREPARACION";
     public static final String ORDER_READY_NOT_ASSIGNED_EMPLOYEE = "No puedes marcar como listo un pedido que no tienes asignado";
-
+    public static final String ORDER_DELIVER_ACCESS_DENIED = "No tienes permisos para entregar pedidos";
+    public static final String ORDER_DELIVER_INVALID_STATUS = "Solo se pueden marcar como entregados pedidos en estado LISTO";
+    public static final String ORDER_DELIVER_PIN_REQUIRED = "El PIN de seguridad es obligatorio";
+    public static final String ORDER_DELIVER_INVALID_PIN = "El PIN de seguridad es inválido";
+    public static final String ORDER_DELIVER_NOT_ASSIGNED_EMPLOYEE = "No puedes entregar un pedido que no tienes asignado";
 
     public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
     public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";

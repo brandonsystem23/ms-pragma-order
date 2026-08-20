@@ -1,8 +1,8 @@
 package com.pragma.order_service.domain.service.restaurant.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ class RestaurantRetrieveValidatorTest {
 
     @Test
     void shouldValidateSuccessfullyWhenRoleIsClient() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(10L)
                 .role("CLIENTE")
                 .build();
@@ -51,7 +51,7 @@ class RestaurantRetrieveValidatorTest {
 
     @Test
     void shouldFailWhenRoleIsNotClient() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(10L)
                 .role("ADMINISTRADOR")
                 .build();

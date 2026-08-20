@@ -3,10 +3,10 @@ package com.pragma.order_service.domain.service.order.validation;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderStatus;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +37,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldValidateSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -76,7 +76,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenRoleIsNotEmployee() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("CLIENTE")
                 .build();
@@ -93,7 +93,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenEmployeeHasNoRestaurantAssigned() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -111,7 +111,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenOrderDoesNotExist() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -130,7 +130,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenOrderBelongsToAnotherRestaurant() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -156,7 +156,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenOrderStatusIsNotPending() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
@@ -182,7 +182,7 @@ class AssignOrderValidatorTest {
 
     @Test
     void shouldFailWhenOrderAlreadyHasEmployeeAssigned() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
                 .build();
