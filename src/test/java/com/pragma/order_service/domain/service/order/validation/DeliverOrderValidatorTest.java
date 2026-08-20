@@ -5,6 +5,7 @@ import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.OrderPersistencePort;
+import com.pragma.order_service.domain.port.out.OrderPinValidationPort;
 import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class MarkOrderReadyValidatorTest {
+class DeliverOrderValidatorTest {
 
     @Mock
     private AuthSessionPort authSessionPort;
@@ -28,31 +29,35 @@ class MarkOrderReadyValidatorTest {
     @Mock
     private OrderPersistencePort orderPersistencePort;
 
+    @Mock
+    private OrderPinValidationPort orderPinValidationPort;
+
     @InjectMocks
-    private MarkOrderReadyValidator validator;
+    private DeliverOrderValidator validator;
 
     @Test
     void shouldValidateSuccessfully() {
         AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
+                .numberDocument("12345678")
                 .build();
 
         Order order = Order.builder()
                 .id(100L)
-                .restaurantId(5L)
-                .status(OrderStatus.IN_PREPARATION)
+                .status(OrderStatus.READY)
                 .employeeAssignedId(30L)
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
         when(orderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
+        when(orderPinValidationPort.existsByEmployeeDocumentAndPin("12345678", "151370"))
+                .thenReturn(Mono.just(true));
 
-        StepVerifier.create(validator.validate(100L, "token-test"))
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.getId());
-                    Assertions.assertEquals(OrderStatus.READY, result.getStatus());
-                    Assertions.assertEquals(30L, result.getEmployeeAssignedId());
+                    Assertions.assertEquals(OrderStatus.DELIVERED, result.getStatus());
                 })
                 .verifyComplete();
     }
@@ -61,7 +66,7 @@ class MarkOrderReadyValidatorTest {
     void shouldFailWhenTokenIsInvalid() {
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.empty());
 
-        StepVerifier.create(validator.validate(100L, "bad-token"))
+        StepVerifier.create(validator.validate(100L, "151370", "bad-token"))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("Token inválido o expirado", error.getMessage());
@@ -74,14 +79,15 @@ class MarkOrderReadyValidatorTest {
         AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("CLIENTE")
+                .numberDocument("12345678")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
 
-        StepVerifier.create(validator.validate(100L, "token-test"))
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("No tienes permisos para marcar pedidos como listos", error.getMessage());
+                    Assertions.assertEquals("No tienes permisos para entregar pedidos", error.getMessage());
                 })
                 .verify();
     }
@@ -91,12 +97,13 @@ class MarkOrderReadyValidatorTest {
         AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
+                .numberDocument("12345678")
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
         when(orderPersistencePort.findById(anyLong())).thenReturn(Mono.empty());
 
-        StepVerifier.create(validator.validate(100L, "token-test"))
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("El pedido no existe", error.getMessage());
@@ -105,25 +112,26 @@ class MarkOrderReadyValidatorTest {
     }
 
     @Test
-    void shouldFailWhenOrderStatusIsNotInPreparation() {
+    void shouldFailWhenOrderStatusIsNotReady() {
         AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
+                .numberDocument("12345678")
                 .build();
 
         Order order = Order.builder()
                 .id(100L)
-                .status(OrderStatus.PENDING)
+                .status(OrderStatus.IN_PREPARATION)
                 .employeeAssignedId(30L)
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
         when(orderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
 
-        StepVerifier.create(validator.validate(100L, "token-test"))
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("Solo se pueden marcar como listos pedidos en estado EN_PREPARACION", error.getMessage());
+                    Assertions.assertEquals("Solo se pueden marcar como entregados pedidos en estado LISTO", error.getMessage());
                 })
                 .verify();
     }
@@ -133,21 +141,49 @@ class MarkOrderReadyValidatorTest {
         AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(30L)
                 .role("EMPLEADO")
+                .numberDocument("12345678")
                 .build();
 
         Order order = Order.builder()
                 .id(100L)
-                .status(OrderStatus.IN_PREPARATION)
+                .status(OrderStatus.READY)
                 .employeeAssignedId(44L)
                 .build();
 
         when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
         when(orderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
 
-        StepVerifier.create(validator.validate(100L, "token-test"))
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("No puedes marcar como listo un pedido que no tienes asignado", error.getMessage());
+                    Assertions.assertEquals("No puedes entregar un pedido que no tienes asignado", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldFailWhenPinIsInvalid() {
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
+                .userId(30L)
+                .role("EMPLEADO")
+                .numberDocument("12345678")
+                .build();
+
+        Order order = Order.builder()
+                .id(100L)
+                .status(OrderStatus.READY)
+                .employeeAssignedId(30L)
+                .build();
+
+        when(authSessionPort.findByToken(anyString())).thenReturn(Mono.just(authSession));
+        when(orderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
+        when(orderPinValidationPort.existsByEmployeeDocumentAndPin("12345678", "151370"))
+                .thenReturn(Mono.just(false));
+
+        StepVerifier.create(validator.validate(100L, "151370", "token-test"))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El PIN de seguridad es inválido", error.getMessage());
                 })
                 .verify();
     }

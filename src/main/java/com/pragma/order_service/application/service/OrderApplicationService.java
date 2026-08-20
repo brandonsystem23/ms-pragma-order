@@ -8,6 +8,7 @@ import com.pragma.order_service.application.mapper.OrderDtoMapper;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.port.in.AssignOrderUseCase;
 import com.pragma.order_service.domain.port.in.CreateOrderUseCase;
+import com.pragma.order_service.domain.port.in.DeliverOrderUseCase;
 import com.pragma.order_service.domain.port.in.ListOrdersUseCase;
 import com.pragma.order_service.domain.port.in.MarkOrderReadyUseCase;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class OrderApplicationService {
     private final OrderDtoMapper orderDtoMapper;
     private final ListOrdersUseCase listOrdersUseCase;
     private final MarkOrderReadyUseCase markOrderReadyUseCase;
+    private final DeliverOrderUseCase deliverOrderUseCase;
 
     public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
         return createOrderUseCase.create(orderDtoMapper.toCommand(request), token)
@@ -38,6 +40,11 @@ public class OrderApplicationService {
 
     public Mono<OrderResponse> markReady(Long orderId, String token) {
         return markOrderReadyUseCase.markReady(orderId, token)
+                .map(this::toOrderResponse);
+    }
+
+    public Mono<OrderResponse> deliver(Long orderId, String pin, String token) {
+        return deliverOrderUseCase.deliver(orderId, pin, token)
                 .map(this::toOrderResponse);
     }
 

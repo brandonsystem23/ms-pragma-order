@@ -1,10 +1,10 @@
 package com.pragma.order_service.domain.service.restaurant.validation;
 
 import com.pragma.order_service.domain.exception.DomainException;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.port.out.AuthSessionPort;
 import com.pragma.order_service.domain.port.out.RestaurantPersistencePort;
 import com.pragma.order_service.domain.port.out.UserWebClientPort;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import com.pragma.order_service.infrastructure.output.webclient.dto.UserResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldValidateSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();
@@ -74,7 +74,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenAuthenticatedUserIsNotAdmin() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("PROPIETARIO")
                 .build();
@@ -93,7 +93,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenNitAlreadyExists() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();
@@ -112,7 +112,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenOwnerDoesNotExist() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();
@@ -131,7 +131,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenOwnerIsInactive() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();
@@ -156,7 +156,7 @@ class RestaurantRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenOwnerRoleIsInvalid() {
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();

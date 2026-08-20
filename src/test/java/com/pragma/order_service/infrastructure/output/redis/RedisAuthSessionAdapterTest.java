@@ -2,7 +2,7 @@ package com.pragma.order_service.infrastructure.output.redis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pragma.order_service.domain.model.auth.AuthSession;
+import com.pragma.order_service.infrastructure.output.redis.dto.AuthSessionRedisValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,13 +43,13 @@ class RedisAuthSessionAdapterTest {
     void shouldFindSessionByTokenSuccessfully() throws Exception {
         String token = "token-test";
 
-        AuthSession authSession = AuthSession.builder()
+        AuthSessionRedisValue authSession = AuthSessionRedisValue.builder()
                 .userId(1L)
                 .role("ADMINISTRADOR")
                 .build();
 
         when(valueOperations.get(anyString())).thenReturn(Mono.just("{}"));
-        when(objectMapper.readValue(anyString(), eq(AuthSession.class))).thenReturn(authSession);
+        when(objectMapper.readValue(anyString(), eq(AuthSessionRedisValue.class))).thenReturn(authSession);
 
         StepVerifier.create(adapter.findByToken(token))
                 .assertNext(result -> {
@@ -74,7 +74,7 @@ class RedisAuthSessionAdapterTest {
         String token = "token-test";
 
         when(valueOperations.get(anyString())).thenReturn(Mono.just("{}"));
-        when(objectMapper.readValue(anyString(), eq(AuthSession.class)))
+        when(objectMapper.readValue(anyString(), eq(AuthSessionRedisValue.class)))
                 .thenThrow(new JsonProcessingException("error") {});
 
         StepVerifier.create(adapter.findByToken(token))

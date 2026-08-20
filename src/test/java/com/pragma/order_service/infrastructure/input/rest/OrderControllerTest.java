@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderItemRequest;
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
+import com.pragma.order_service.application.dto.request.DeliverOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
@@ -189,5 +190,40 @@ class OrderControllerTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void shouldDeliverOrderSuccessfully() {
+        DeliverOrderRequest request = new DeliverOrderRequest("151370");
+
+        OrderResponse response = OrderResponse.builder()
+                .id(100L)
+                .customerId(20L)
+                .nameCustomer("Brandon Briones")
+                .restaurantId(1L)
+                .nameRestaurant("El buen sabor")
+                .status("ENTREGADO")
+                .employeeAssignedId(30L)
+                .items(List.of(
+                        OrderItemResponse.builder()
+                                .dishId(10L)
+                                .name("Hamburguesa triple")
+                                .quantity(BigDecimal.valueOf(2))
+                                .build()
+                ))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(orderApplicationService.deliver(anyLong(), anyString(), anyString())).thenReturn(Mono.just(response));
+
+        StepVerifier.create(orderController.deliver(100L, "Bearer token-test", request))
+                .assertNext(result -> {
+                    Assertions.assertEquals(100L, result.id());
+                    Assertions.assertEquals("ENTREGADO", result.status());
+                    Assertions.assertEquals(30L, result.employeeAssignedId());
+                })
+                .verifyComplete();
+    }
+
 
 }
