@@ -18,5 +18,13 @@ public class WebClientConfig {
                 .build();
     }
 
+    @Bean(name = "notificationsWebClient")
+    public WebClient notificationsWebClient(
+            WebClient.Builder builder,
+            @Value("${clients.notifications.base-url}") String notificationsBaseUrl
+    ) {
+        return builder
+                .baseUrl(notificationsBaseUrl)
+                .build();
+    }
 }
-
