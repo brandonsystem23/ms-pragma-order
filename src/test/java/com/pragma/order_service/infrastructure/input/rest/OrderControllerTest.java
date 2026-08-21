@@ -2,11 +2,11 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderItemRequest;
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
-import com.pragma.order_service.application.dto.request.DeliverOrderRequest;
+import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
-import com.pragma.order_service.application.service.OrderApplicationService;
+import com.pragma.order_service.application.handler.IOrderHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 class OrderControllerTest {
 
     @Mock
-    private OrderApplicationService orderApplicationService;
+    private IOrderHandler iOrderHandler;
 
     @InjectMocks
     private OrderController orderController;
@@ -66,7 +66,7 @@ class OrderControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(orderApplicationService.create(any(), anyString())).thenReturn(Mono.just(response));
+        when(iOrderHandler.create(any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(orderController.create("Bearer token-test", request))
                 .assertNext(result -> {
@@ -81,39 +81,36 @@ class OrderControllerTest {
     }
 
     @Test
-    void shouldAssignOrderSuccessfully() {
+    void shouldUpdateOrderStatusSuccessfully() {
+        UpdateOrderRequest request = new UpdateOrderRequest("ENTREGADO", "151370");
+
         OrderResponse response = OrderResponse.builder()
                 .id(100L)
                 .customerId(20L)
                 .nameCustomer("Brandon Briones")
                 .restaurantId(1L)
                 .nameRestaurant("El buen sabor")
-                .status("EN_PREPARACION")
+                .status("ENTREGADO")
                 .employeeAssignedId(30L)
                 .items(List.of(
                         OrderItemResponse.builder()
                                 .dishId(10L)
                                 .name("Hamburguesa triple")
                                 .quantity(BigDecimal.valueOf(2))
-                                .build(),
-                        OrderItemResponse.builder()
-                                .dishId(11L)
-                                .name("Lomo saltado")
-                                .quantity(BigDecimal.ONE)
                                 .build()
                 ))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(orderApplicationService.assign(anyLong(), anyString())).thenReturn(Mono.just(response));
+        when(iOrderHandler.updateStatus(anyLong(), any(), anyString()))
+                .thenReturn(Mono.just(response));
 
-        StepVerifier.create(orderController.assign(100L, "Bearer token-test"))
+        StepVerifier.create(orderController.updateStatus(100L, "Bearer token-test", request))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals("EN_PREPARACION", result.status());
+                    Assertions.assertEquals("ENTREGADO", result.status());
                     Assertions.assertEquals(30L, result.employeeAssignedId());
-                    Assertions.assertEquals(2, result.items().size());
                 })
                 .verifyComplete();
     }
@@ -147,7 +144,7 @@ class OrderControllerTest {
                 .totalPages(1)
                 .build();
 
-        when(orderApplicationService.list(anyString(), any(), anyInt(), anyInt()))
+        when(iOrderHandler.list(anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(Mono.just(pagedResponse));
 
         StepVerifier.create(orderController.list("Bearer token-test", "PENDIENTE", 0, 10))
@@ -158,105 +155,4 @@ class OrderControllerTest {
                 })
                 .verifyComplete();
     }
-
-    @Test
-    void shouldMarkOrderReadySuccessfully() {
-        OrderResponse response = OrderResponse.builder()
-                .id(100L)
-                .customerId(20L)
-                .nameCustomer("Brandon Briones")
-                .restaurantId(1L)
-                .nameRestaurant("El buen sabor")
-                .status("LISTO")
-                .employeeAssignedId(30L)
-                .items(List.of(
-                        OrderItemResponse.builder()
-                                .dishId(10L)
-                                .name("Hamburguesa triple")
-                                .quantity(BigDecimal.valueOf(2))
-                                .build()
-                ))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        when(orderApplicationService.markReady(anyLong(), anyString())).thenReturn(Mono.just(response));
-
-        StepVerifier.create(orderController.markReady(100L, "Bearer token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals("LISTO", result.status());
-                    Assertions.assertEquals(30L, result.employeeAssignedId());
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldDeliverOrderSuccessfully() {
-        DeliverOrderRequest request = new DeliverOrderRequest("151370");
-
-        OrderResponse response = OrderResponse.builder()
-                .id(100L)
-                .customerId(20L)
-                .nameCustomer("Brandon Briones")
-                .restaurantId(1L)
-                .nameRestaurant("El buen sabor")
-                .status("ENTREGADO")
-                .employeeAssignedId(30L)
-                .items(List.of(
-                        OrderItemResponse.builder()
-                                .dishId(10L)
-                                .name("Hamburguesa triple")
-                                .quantity(BigDecimal.valueOf(2))
-                                .build()
-                ))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        when(orderApplicationService.deliver(anyLong(), anyString(), anyString())).thenReturn(Mono.just(response));
-
-        StepVerifier.create(orderController.deliver(100L, "Bearer token-test", request))
-                .assertNext(result -> {
-                    Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals("ENTREGADO", result.status());
-                    Assertions.assertEquals(30L, result.employeeAssignedId());
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldCancelOrderSuccessfully() {
-        OrderResponse response = OrderResponse.builder()
-                .id(100L)
-                .customerId(20L)
-                .nameCustomer("Brandon Briones")
-                .restaurantId(1L)
-                .nameRestaurant("El buen sabor")
-                .status("CANCELADO")
-                .employeeAssignedId(null)
-                .items(List.of(
-                        OrderItemResponse.builder()
-                                .dishId(10L)
-                                .name("Hamburguesa triple")
-                                .quantity(BigDecimal.valueOf(2))
-                                .build()
-                ))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        when(orderApplicationService.cancel(anyLong(), anyString())).thenReturn(Mono.just(response));
-
-        StepVerifier.create(orderController.cancel(100L, "Bearer token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals("CANCELADO", result.status());
-                    Assertions.assertEquals(20L, result.customerId());
-                })
-                .verifyComplete();
-    }
-
-
-
 }

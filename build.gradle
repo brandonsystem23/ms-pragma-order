@@ -7,7 +7,7 @@ plugins {
 
 group = 'com.pragma'
 
-version = '1.11.1'
+version = '2.11.1'
 
 java {
 	toolchain {
@@ -129,10 +129,13 @@ jacocoTestReport {
 						'com/pragma/order_service/application/mapper/**',
 						'com/pragma/order_service/domain/model/**',
 						'com/pragma/order_service/domain/port/**',
-						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
-						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
-						'com/pragma/order_service/infrastructure/output/postgres/mapper/**',
-						'com/pragma/order_service/infrastructure/output/webclient/mapper/**'
+						'com/pragma/order_service/infrastructure/out/postgres/entity/**',
+						'com/pragma/order_service/infrastructure/out/postgres/repository/**',
+						'com/pragma/order_service/infrastructure/out/postgres/mapper/**',
+						'com/pragma/order_service/infrastructure/out/redis/mapper/**',
+						'com/pragma/order_service/infrastructure/out/redis/dto/**',
+						'com/pragma/order_service/infrastructure/out/webclient/mapper/**',
+						'com/pragma/order_service/infrastructure/out/webclient/dto/**'
 				])
 			})
 	)
@@ -163,10 +166,13 @@ jacocoTestCoverageVerification {
 						'com/pragma/order_service/application/mapper/**',
 						'com/pragma/order_service/domain/model/**',
 						'com/pragma/order_service/domain/port/**',
-						'com/pragma/order_service/infrastructure/output/postgres/entity/**',
-						'com/pragma/order_service/infrastructure/output/postgres/repository/**',
-						'com/pragma/order_service/infrastructure/output/postgres/mapper/**',
-						'com/pragma/order_service/infrastructure/output/webclient/mapper/**'
+						'com/pragma/order_service/infrastructure/out/postgres/entity/**',
+						'com/pragma/order_service/infrastructure/out/postgres/repository/**',
+						'com/pragma/order_service/infrastructure/out/postgres/mapper/**',
+						'com/pragma/order_service/infrastructure/out/redis/mapper/**',
+						'com/pragma/order_service/infrastructure/out/redis/dto/**',
+						'com/pragma/order_service/infrastructure/out/webclient/mapper/**',
+						'com/pragma/order_service/infrastructure/out/webclient/dto/**'
 				])
 			})
 	)

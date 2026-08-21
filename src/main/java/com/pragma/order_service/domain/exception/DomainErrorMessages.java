@@ -82,6 +82,10 @@ public final class DomainErrorMessages {
     public static final String ORDER_STATUS_NOT_FOUND = "El estado ingresado no existe";
     public static final String EMPLOYEE_RESTAURANT_NOT_FOUND = "El empleado no tiene un restaurante asignado";
 
+    public static final String ORDER_STATUS_UPDATE_REQUIRED = "El campo status es obligatorio";
+    public static final String ORDER_STATUS_UPDATE_NOT_SUPPORTED = "El estado solicitado no es soportado para actualización";
+
+
     private DomainErrorMessages() {
     }
 }
