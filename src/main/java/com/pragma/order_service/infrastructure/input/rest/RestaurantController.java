@@ -4,8 +4,8 @@ import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
-import com.pragma.order_service.application.service.RestaurantApplicationService;
-import com.pragma.order_service.infrastructure.util.TokenExtractor;
+import com.pragma.order_service.application.handler.IRestaurantHandler;
+import com.pragma.order_service.infrastructure.util.UtilTokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Restaurantes", description = "Endpoints para gestión de restaurantes")
 public class RestaurantController {
 
-    private final RestaurantApplicationService restaurantApplicationService;
+    private final IRestaurantHandler iRestaurantHandler;
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
@@ -29,8 +29,8 @@ public class RestaurantController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody CreateRestaurantRequest request
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return restaurantApplicationService.create(request, token);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iRestaurantHandler.create(request, token);
     }
 
     @GetMapping("/list")
@@ -41,7 +41,7 @@ public class RestaurantController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return restaurantApplicationService.list(token, page, size);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iRestaurantHandler.list(token, page, size);
     }
 }
