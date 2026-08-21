@@ -4,8 +4,8 @@ import com.pragma.order_service.application.dto.request.CreateDishRequest;
 import com.pragma.order_service.application.dto.request.UpdateDishRequest;
 import com.pragma.order_service.application.dto.response.DishResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
-import com.pragma.order_service.application.service.DishApplicationService;
-import com.pragma.order_service.infrastructure.util.TokenExtractor;
+import com.pragma.order_service.application.handler.IDishHandler;
+import com.pragma.order_service.infrastructure.util.UtilTokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 @Tag(name = "Platos", description = "Endpoints para gestión de platos")
 public class DishController {
 
-    private final DishApplicationService dishApplicationService;
+    private final IDishHandler iDishHandler;
 
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
@@ -29,8 +29,8 @@ public class DishController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody CreateDishRequest request
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return dishApplicationService.create(request, token);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iDishHandler.create(request, token);
     }
 
     @PutMapping("/{dishId}")
@@ -41,8 +41,8 @@ public class DishController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody UpdateDishRequest request
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return dishApplicationService.update(dishId, request, token);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iDishHandler.update(dishId, request, token);
     }
 
     @PatchMapping("/{dishId}/status")
@@ -53,8 +53,8 @@ public class DishController {
             @RequestParam boolean status,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return dishApplicationService.updateStatus(dishId, status, token);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iDishHandler.updateStatus(dishId, status, token);
     }
 
     @GetMapping("/restaurant/{restaurantId}")
@@ -67,7 +67,7 @@ public class DishController {
             @RequestParam(defaultValue = "10") int size,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) {
-        String token = TokenExtractor.extract(authorizationHeader);
-        return dishApplicationService.listByRestaurant(restaurantId, category, page, size, token);
+        String token = UtilTokenExtractor.extract(authorizationHeader);
+        return iDishHandler.listByRestaurant(restaurantId, category, page, size, token);
     }
 }

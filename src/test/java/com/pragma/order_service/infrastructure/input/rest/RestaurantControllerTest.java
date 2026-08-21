@@ -4,7 +4,7 @@ import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
-import com.pragma.order_service.application.service.RestaurantApplicationService;
+import com.pragma.order_service.application.handler.IRestaurantHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class RestaurantControllerTest {
 
     @Mock
-    private RestaurantApplicationService restaurantApplicationService;
+    private IRestaurantHandler iRestaurantHandler;
 
     @InjectMocks
     private RestaurantController restaurantController;
@@ -53,7 +53,7 @@ class RestaurantControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(restaurantApplicationService.create(any(), anyString())).thenReturn(Mono.just(response));
+        when(iRestaurantHandler.create(any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(restaurantController.create("Bearer token-test", request))
                 .assertNext(result -> {
@@ -78,7 +78,7 @@ class RestaurantControllerTest {
                 .totalPages(1)
                 .build();
 
-        when(restaurantApplicationService.list(anyString(), anyInt(), anyInt()))
+        when(iRestaurantHandler.list(anyString(), anyInt(), anyInt()))
                 .thenReturn(Mono.just(response));
 
         StepVerifier.create(restaurantController.list("Bearer token-test", 0, 10))

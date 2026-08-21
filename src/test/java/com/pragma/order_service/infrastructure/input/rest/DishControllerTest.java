@@ -3,7 +3,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 import com.pragma.order_service.application.dto.request.CreateDishRequest;
 import com.pragma.order_service.application.dto.request.UpdateDishRequest;
 import com.pragma.order_service.application.dto.response.DishResponse;
-import com.pragma.order_service.application.service.DishApplicationService;
+import com.pragma.order_service.application.handler.IDishHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class DishControllerTest {
 
     @Mock
-    private DishApplicationService dishApplicationService;
+    private IDishHandler iDishHandler;
 
     @InjectMocks
     private DishController dishController;
@@ -58,7 +58,7 @@ class DishControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(dishApplicationService.create(any(), anyString())).thenReturn(Mono.just(response));
+        when(iDishHandler.create(any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(dishController.create("Bearer token-test", request))
                 .assertNext(result -> {
@@ -90,7 +90,7 @@ class DishControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(dishApplicationService.update(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
+        when(iDishHandler.update(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(dishController.update(1L, "Bearer token-test", request))
                 .assertNext(result -> {
@@ -116,7 +116,7 @@ class DishControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(dishApplicationService.updateStatus(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
+        when(iDishHandler.updateStatus(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
 
         StepVerifier.create(dishController.updateStatus(1L, false,"Bearer token-test"))
                 .assertNext(result -> {
@@ -150,7 +150,7 @@ class DishControllerTest {
                 .totalPages(1)
                 .build();
 
-        when(dishApplicationService.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
+        when(iDishHandler.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
                 .thenReturn(Mono.just(response));
 
         StepVerifier.create(dishController.listByRestaurant(1L, "PIZZA", 0, 10, "Bearer token-test"))
