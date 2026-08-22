@@ -165,4 +165,49 @@ class RestaurantPersistenceAdapterTest {
                 .verifyComplete();
     }
 
+    @Test
+    void shouldFindRestaurantByIdSuccessfully() {
+        RestaurantEntity entity = RestaurantEntity.builder()
+                .id(1L)
+                .name("Restaurante La 70")
+                .nit("123456789")
+                .address("Calle 10 # 20-30")
+                .phone("+573005698325")
+                .urlLogo("https://logo.com/logo.png")
+                .ownerId(2L)
+                .status(true)
+                .build();
+
+        Restaurant restaurant = Restaurant.builder()
+                .id(1L)
+                .name("Restaurante La 70")
+                .nit("123456789")
+                .address("Calle 10 # 20-30")
+                .phone("+573005698325")
+                .urlLogo("https://logo.com/logo.png")
+                .ownerId(2L)
+                .status(true)
+                .build();
+
+        when(restaurantRepository.findById(1L))
+                .thenReturn(Mono.just(entity));
+
+        when(restaurantEntityMapper.toDomain(entity))
+                .thenReturn(restaurant);
+
+        StepVerifier.create(restaurantPersistenceAdapter.findById(1L))
+                .assertNext(found -> {
+                    Assertions.assertEquals(1L, found.getId());
+                    Assertions.assertEquals("Restaurante La 70", found.getName());
+                    Assertions.assertEquals("123456789", found.getNit());
+                    Assertions.assertEquals("Calle 10 # 20-30", found.getAddress());
+                    Assertions.assertEquals("+573005698325", found.getPhone());
+                    Assertions.assertEquals("https://logo.com/logo.png", found.getUrlLogo());
+                    Assertions.assertEquals(2L, found.getOwnerId());
+                    Assertions.assertTrue(found.getStatus());
+                })
+                .verifyComplete();
+    }
+
+
 }

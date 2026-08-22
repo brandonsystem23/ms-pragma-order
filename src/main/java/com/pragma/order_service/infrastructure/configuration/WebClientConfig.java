@@ -27,4 +27,14 @@ public class WebClientConfig {
                 .baseUrl(notificationsBaseUrl)
                 .build();
     }
+
+    @Bean(name = "traceabilityWebClient")
+    public WebClient traceabilityWebClient(
+            WebClient.Builder builder,
+            @Value("${clients.traceability.base-url}") String traceabilityBaseUrl
+    ) {
+        return builder
+                .baseUrl(traceabilityBaseUrl)
+                .build();
+    }
 }
