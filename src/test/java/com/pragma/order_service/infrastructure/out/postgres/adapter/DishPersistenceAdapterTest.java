@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -243,6 +244,73 @@ class DishPersistenceAdapterTest {
                 .expectNext(1L)
                 .verifyComplete();
     }
+
+    @Test
+    void shouldFindDishesByIdsSuccessfully() {
+        Dish dish1 = Dish.builder()
+                .id(10L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza1.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        Dish dish2 = Dish.builder()
+                .id(11L)
+                .name("Hamburguesa Doble")
+                .price(BigDecimal.valueOf(18000))
+                .description("Hamburguesa con doble carne")
+                .urlImage("https://image.com/burger.png")
+                .category("FASTFOOD")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        DishEntity entity1 = DishEntity.builder()
+                .id(10L)
+                .name("Pizza Hawaiana")
+                .price(BigDecimal.valueOf(25000))
+                .description("Pizza con piña y jamón")
+                .urlImage("https://image.com/pizza1.png")
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        DishEntity entity2 = DishEntity.builder()
+                .id(11L)
+                .name("Hamburguesa Doble")
+                .price(BigDecimal.valueOf(18000))
+                .description("Hamburguesa con doble carne")
+                .urlImage("https://image.com/burger.png")
+                .category("FASTFOOD")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        when(dishRepository.findAllById(List.of(10L, 11L)))
+                .thenReturn(Flux.just(entity1, entity2));
+
+        when(dishEntityMapper.toDomain(entity1)).thenReturn(dish1);
+        when(dishEntityMapper.toDomain(entity2)).thenReturn(dish2);
+
+        StepVerifier.create(dishPersistenceAdapter.findByIds(List.of(10L, 11L)))
+                .assertNext(found -> {
+                    Assertions.assertEquals(10L, found.getId());
+                    Assertions.assertEquals("Pizza Hawaiana", found.getName());
+                    Assertions.assertEquals(BigDecimal.valueOf(25000), found.getPrice());
+                })
+                .assertNext(found -> {
+                    Assertions.assertEquals(11L, found.getId());
+                    Assertions.assertEquals("Hamburguesa Doble", found.getName());
+                    Assertions.assertEquals(BigDecimal.valueOf(18000), found.getPrice());
+                })
+                .verifyComplete();
+    }
+
 
 
 }

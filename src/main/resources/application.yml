@@ -29,6 +29,10 @@ clients:
   notifications:
     base-url: ${NOTIFICATIONS_SERVICE_URL:http://localhost:8082}
     path: /api/v1/notifications/send
+  traceability:
+    base-url: ${TRACEABILITY_SERVICE_URL:http://localhost:8084}
+    path: /api/v1/traceability/create
+
 
 
 logging:

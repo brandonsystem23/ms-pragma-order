@@ -9,6 +9,7 @@ public record OrderItemResponse(
 
         Long dishId,
         String name,
-        BigDecimal quantity
+        BigDecimal quantity,
+        BigDecimal price
 ) {
 }

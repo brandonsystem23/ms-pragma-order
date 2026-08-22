@@ -4,6 +4,8 @@ import com.pragma.order_service.domain.model.Dish;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public interface IDishPersistencePort {
 
     Mono<Boolean> existsByName(String name);
@@ -13,6 +15,8 @@ public interface IDishPersistencePort {
     Mono<Dish> findByIdAndStatusTrue(Long dishId);
 
     Mono<Dish> findById(Long dishId);
+
+    Flux<Dish> findByIds(List<Long> dishIds);
 
     Flux<Dish> findActiveByRestaurantId(Long restaurantId, int page, int size);
 

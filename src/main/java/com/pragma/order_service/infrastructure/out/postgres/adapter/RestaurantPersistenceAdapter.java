@@ -38,6 +38,12 @@ public class RestaurantPersistenceAdapter implements IRestaurantPersistencePort 
     }
 
     @Override
+    public Mono<Restaurant> findById(Long restaurantId) {
+        return restaurantRepository.findById(restaurantId)
+                .map(restaurantEntityMapper::toDomain);
+    }
+
+    @Override
     public Flux<Restaurant> findActiveRestaurantsOrdered(int page, int size) {
         int offset = page * size;
         return restaurantRepository.findActiveRestaurantsOrdered(size, offset)
