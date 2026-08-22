@@ -30,9 +30,11 @@ public interface OrderRepository extends ReactiveCrudRepository<OrderEntity, Lon
             r.name AS restaurant_name,
             o.status AS status,
             o.employee_assigned_id AS employee_assigned_id,
+            o.total_price AS total_price,
             oi.dish_id AS dish_id,
             d.name AS dish_name,
             oi.quantity AS quantity,
+            oi.price AS dish_price,
             o.created_at AS created_at,
             o.updated_at AS updated_at
         FROM orders o
@@ -72,9 +74,11 @@ public interface OrderRepository extends ReactiveCrudRepository<OrderEntity, Lon
             r.name AS restaurant_name,
             o.status AS status,
             o.employee_assigned_id AS employee_assigned_id,
+            o.total_price AS total_price,
             oi.dish_id AS dish_id,
             d.name AS dish_name,
             oi.quantity AS quantity,
+            oi.price AS dish_price,
             o.created_at AS created_at,
             o.updated_at AS updated_at
         FROM orders o

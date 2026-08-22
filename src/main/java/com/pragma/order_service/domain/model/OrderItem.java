@@ -20,4 +20,6 @@ public class OrderItem {
     private Long dishId;
 
     private BigDecimal quantity;
+
+    private BigDecimal price;
 }

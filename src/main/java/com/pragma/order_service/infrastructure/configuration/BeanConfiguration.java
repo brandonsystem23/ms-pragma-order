@@ -210,11 +210,13 @@ public class BeanConfiguration {
     @Bean
     public ICreateOrderServicePort createOrderUseCase(
             IOrderPersistencePort iOrderPersistencePort,
+            IDishPersistencePort iDishPersistencePort,
             OrderRegistrationValidator orderRegistrationValidator,
             OrderDomainValidator orderDomainValidator
     ) {
         return new CreateOrderUseCase(
                 iOrderPersistencePort,
+                iDishPersistencePort,
                 orderRegistrationValidator,
                 orderDomainValidator
         );

@@ -27,6 +27,7 @@ public interface OrderDtoMapper {
     @Mapping(target = "nameRestaurant", source = "orderDetail.restaurantName")
     @Mapping(target = "status", source = "orderDetail.status")
     @Mapping(target = "employeeAssignedId", source = "orderDetail.employeeAssignedId")
+    @Mapping(target = "totalPrice", source = "orderDetail.totalPrice")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "createdAt", source = "orderDetail.createdAt")
     @Mapping(target = "updatedAt", source = "orderDetail.updatedAt")
@@ -35,6 +36,7 @@ public interface OrderDtoMapper {
     @Mapping(target = "dishId", source = "dishId")
     @Mapping(target = "name", source = "dishName")
     @Mapping(target = "quantity", source = "quantity")
+    @Mapping(target = "price", source = "dishPrice")
     OrderItemResponse toItemResponse(OrderDetail orderDetail);
 
     OrderResponse toResponse(OrderQueryModel orderQueryModel);

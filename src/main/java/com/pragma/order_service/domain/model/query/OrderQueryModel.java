@@ -2,6 +2,7 @@ package com.pragma.order_service.domain.model.query;
 
 import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public record OrderQueryModel(
         String nameRestaurant,
         String status,
         Long employeeAssignedId,
+        BigDecimal totalPrice,
         List<OrderItemQueryModel> items,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

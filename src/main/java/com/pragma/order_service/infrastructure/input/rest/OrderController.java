@@ -2,6 +2,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
+import com.pragma.order_service.application.dto.response.GenericResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.handler.IOrderHandler;
@@ -45,7 +46,7 @@ public class OrderController {
                     - CANCELADO: cancela el pedido
                     """
     )
-    public Mono<OrderResponse> updateStatus(
+    public Mono<GenericResponse> updateStatus(
             @PathVariable Long orderId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody UpdateOrderRequest request

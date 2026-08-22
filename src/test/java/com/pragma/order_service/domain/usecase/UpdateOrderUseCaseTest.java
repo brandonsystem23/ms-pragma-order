@@ -8,28 +8,24 @@ import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.UpdateOrderCommand;
-import com.pragma.order_service.domain.model.query.OrderDetail;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
+import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateOrderUseCaseTest {
@@ -62,12 +58,6 @@ class UpdateOrderUseCaseTest {
     private static final Long RESTAURANT_ID = 5L;
     private static final String EMPLOYEE_DOCUMENT = "12345678";
 
-    private LocalDateTime now;
-
-    @BeforeEach
-    void setUp() {
-        now = LocalDateTime.now();
-    }
 
     @Test
     void shouldAssignOrderSuccessfully() {
@@ -88,23 +78,15 @@ class UpdateOrderUseCaseTest {
                 .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
-        OrderDetail detail = buildDetail(OrderStatus.IN_PREPARATION, EMPLOYEE_ID);
-
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
         when(iRestaurantPersistencePort.findRestaurantIdByEmployeeId(anyLong())).thenReturn(Mono.just(RESTAURANT_ID));
         when(iOrderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(iOrderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
 
         StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result -> {
-                    assertEquals(1, result.size());
-                    assertEquals(OrderStatus.IN_PREPARATION, result.getFirst().getStatus());
-                    assertEquals(EMPLOYEE_ID, result.getFirst().getEmployeeAssignedId());
-                })
+                .assertNext(result -> assertEquals(ORDER_ID, result))
                 .verifyComplete();
-
     }
 
     @Test
@@ -130,7 +112,6 @@ class UpdateOrderUseCaseTest {
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
-
         when(iRestaurantPersistencePort.findRestaurantIdByEmployeeId(anyLong()))
                 .thenReturn(Mono.just(RESTAURANT_ID));
 
@@ -141,10 +122,7 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ACCESS_DENIED, ex.getCode());
                 })
                 .verify();
-
     }
-
-
 
     @Test
     void shouldFailAssignOrderWhenEmployeeHasNoRestaurant() {
@@ -168,7 +146,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.EMPLOYEE_RESTAURANT_NOT_FOUND, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -193,7 +170,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ACCESS_DENIED, ex.getCode());
                 })
                 .verify();
-        
     }
 
     @Test
@@ -218,7 +194,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -244,7 +219,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
                 })
                 .verify();
-        
     }
 
     @Test
@@ -268,8 +242,6 @@ class UpdateOrderUseCaseTest {
                 .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
-        OrderDetail detail = buildDetail(OrderStatus.READY, EMPLOYEE_ID);
-
         UserSummary userSummary = UserSummary.builder()
                 .id(CUSTOMER_ID)
                 .firstName("Juan")
@@ -288,17 +260,13 @@ class UpdateOrderUseCaseTest {
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
-        when(iOrderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
         when(iUserWebClientPort.findById(anyLong(), anyString())).thenReturn(Mono.just(userSummary));
         when(iNotificationWebClientPort.sendReadyNotification(anyString(), anyString()))
                 .thenReturn(Mono.just(notification));
         when(iOrderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
 
         StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result -> {
-                    assertEquals(1, result.size());
-                    assertEquals(OrderStatus.READY, result.getFirst().getStatus());
-                })
+                .assertNext(result -> assertEquals(ORDER_ID, result))
                 .verifyComplete();
     }
 
@@ -323,7 +291,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
                 })
                 .verify();
-        
     }
 
     @Test
@@ -362,8 +329,6 @@ class UpdateOrderUseCaseTest {
                 .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
-        OrderDetail detail = buildDetail(OrderStatus.READY, EMPLOYEE_ID);
-
         UserSummary userSummary = UserSummary.builder()
                 .id(CUSTOMER_ID)
                 .firstName("Juan")
@@ -377,7 +342,6 @@ class UpdateOrderUseCaseTest {
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
-        when(iOrderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
         when(iUserWebClientPort.findById(anyLong(), anyString())).thenReturn(Mono.just(userSummary));
         when(iNotificationWebClientPort.sendReadyNotification(anyString(), anyString()))
                 .thenReturn(Mono.error(new RuntimeException("Error enviando notificación")));
@@ -385,7 +349,6 @@ class UpdateOrderUseCaseTest {
         StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
                 .expectError(RuntimeException.class)
                 .verify();
-
     }
 
     @Test
@@ -405,23 +368,16 @@ class UpdateOrderUseCaseTest {
                 .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
-        OrderDetail detail = buildDetail(OrderStatus.DELIVERED, EMPLOYEE_ID);
-
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
         when(iRedisCachePort.existsByEmployeeDocumentAndPin(anyString(), anyString()))
                 .thenReturn(Mono.just(true));
         when(iOrderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(iOrderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
 
         StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result -> {
-                    assertEquals(1, result.size());
-                    assertEquals(OrderStatus.DELIVERED, result.getFirst().getStatus());
-                })
+                .assertNext(result -> assertEquals(ORDER_ID, result))
                 .verifyComplete();
-
     }
 
     @Test
@@ -445,8 +401,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
                 })
                 .verify();
-
-
     }
 
     @Test
@@ -470,7 +424,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ACCESS_DENIED, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -496,7 +449,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.INVALID_PIN, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -516,21 +468,14 @@ class UpdateOrderUseCaseTest {
                 .status(OrderStatus.CANCELLED)
                 .build();
 
-        OrderDetail detail = buildDetail(OrderStatus.CANCELLED, null);
-
         doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
         when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(sessionRedis));
         when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
         when(iOrderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(iOrderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
 
         StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result -> {
-                    assertEquals(1, result.size());
-                    assertEquals(OrderStatus.CANCELLED, result.getFirst().getStatus());
-                })
+                .assertNext(result -> assertEquals(ORDER_ID, result))
                 .verifyComplete();
-
     }
 
     @Test
@@ -554,7 +499,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ACCESS_DENIED, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -578,7 +522,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ACCESS_DENIED, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -602,7 +545,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -618,7 +560,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.INVALID_TOKEN, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -635,7 +576,6 @@ class UpdateOrderUseCaseTest {
                     assertEquals(DomainErrorCode.ORDER_NOT_FOUND, ex.getCode());
                 })
                 .verify();
-
     }
 
     @Test
@@ -679,23 +619,6 @@ class UpdateOrderUseCaseTest {
         return AuthSession.builder()
                 .userId(CUSTOMER_ID)
                 .role("CLIENTE")
-                .build();
-    }
-
-    private OrderDetail buildDetail(String status, Long employeeAssignedId) {
-        return OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .customerName("Juan Perez")
-                .restaurantId(RESTAURANT_ID)
-                .restaurantName("Restaurante Test")
-                .status(status)
-                .employeeAssignedId(employeeAssignedId)
-                .dishId(10L)
-                .dishName("Pizza")
-                .quantity(BigDecimal.valueOf(2))
-                .createdAt(now)
-                .updatedAt(now)
                 .build();
     }
 }

@@ -20,9 +20,11 @@ public class OrderSummary {
     private String restaurantName;
     private String status;
     private Long employeeAssignedId;
+    private BigDecimal totalPrice;
     private Long dishId;
     private String dishName;
     private BigDecimal quantity;
+    private BigDecimal dishPrice;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

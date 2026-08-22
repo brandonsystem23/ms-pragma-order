@@ -8,8 +8,6 @@ import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
-import com.pragma.order_service.domain.model.command.UpdateOrderCommand;
-import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.api.IUpdateOrderServicePort;
 import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
@@ -19,8 +17,6 @@ import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 public class UpdateOrderUseCase implements IUpdateOrderServicePort {
@@ -33,7 +29,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
     private final UpdateOrderDomainValidator updateOrderStatusDomainValidator;
 
     @Override
-    public Mono<List<OrderDetail>> update(Long orderId, UpdateOrderCommand updateOrderCommand, String token) {
+    public Mono<Long> update(Long orderId, com.pragma.order_service.domain.model.command.UpdateOrderCommand updateOrderCommand, String token) {
         return Mono.defer(() -> {
 
             updateOrderStatusDomainValidator.validate(orderId, updateOrderCommand);
@@ -44,9 +40,9 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
         });
     }
 
-    private Mono<List<OrderDetail>> processStatusUpdate(
+    private Mono<Long> processStatusUpdate(
             Order order,
-            UpdateOrderCommand command,
+            com.pragma.order_service.domain.model.command.UpdateOrderCommand command,
             AuthSession session,
             String token
     ) {
@@ -62,7 +58,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
         };
     }
 
-    private Mono<List<OrderDetail>> assignOrder(Order order, AuthSession session) {
+    private Mono<Long> assignOrder(Order order, AuthSession session) {
         return validateEmployeeRole(session, DomainErrorMessages.ORDER_ASSIGN_ACCESS_DENIED)
                 .then(findRestaurantIdByEmployee(session.userId()))
                 .flatMap(restaurantId -> {
@@ -90,11 +86,11 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                     order.setEmployeeAssignedId(session.userId());
                     order.setStatus(OrderStatus.IN_PREPARATION);
 
-                    return saveAndReturnDetails(order);
+                    return saveAndReturnId(order);
                 });
     }
 
-    private Mono<List<OrderDetail>> markOrderReady(Order order, AuthSession session, String token) {
+    private Mono<Long> markOrderReady(Order order, AuthSession session, String token) {
         return validateEmployeeRole(session, DomainErrorMessages.ORDER_READY_ACCESS_DENIED)
                 .then(Mono.defer(() -> {
                     if (!OrderStatus.IN_PREPARATION.equals(order.getStatus())) {
@@ -111,23 +107,17 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                         ));
                     }
 
-                    return iOrderPersistencePort.findOrderDetailById(order.getId())
-                            .collectList()
-                            .flatMap(orderDetails -> {
-                                OrderDetail orderDetail = orderDetails.getFirst();
-
-                                return iUserWebClientPort.findById(orderDetail.getCustomerId(), token)
-                                        .map(UserSummary::phone)
-                                        .flatMap(phone -> iNotificationWebClientPort.sendReadyNotification(phone, token))
-                                        .then(Mono.defer(() -> {
-                                            order.setStatus(OrderStatus.READY);
-                                            return saveAndReturnDetails(order);
-                                        }));
-                            });
+                    return iUserWebClientPort.findById(order.getCustomerId(), token)
+                            .map(UserSummary::phone)
+                            .flatMap(phone -> iNotificationWebClientPort.sendReadyNotification(phone, token))
+                            .then(Mono.defer(() -> {
+                                order.setStatus(OrderStatus.READY);
+                                return saveAndReturnId(order);
+                            }));
                 }));
     }
 
-    private Mono<List<OrderDetail>> deliverOrder(Order order, AuthSession session, String pin) {
+    private Mono<Long> deliverOrder(Order order, AuthSession session, String pin) {
         return validateEmployeeRole(session, DomainErrorMessages.ORDER_DELIVER_ACCESS_DENIED)
                 .then(Mono.defer(() -> {
                     if (!OrderStatus.READY.equals(order.getStatus())) {
@@ -154,12 +144,12 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                                 }
 
                                 order.setStatus(OrderStatus.DELIVERED);
-                                return saveAndReturnDetails(order);
+                                return saveAndReturnId(order);
                             });
                 }));
     }
 
-    private Mono<List<OrderDetail>> cancelOrder(Order order, AuthSession session) {
+    private Mono<Long> cancelOrder(Order order, AuthSession session) {
         return validateClientRole(session, DomainErrorMessages.ORDER_CANCEL_ACCESS_DENIED)
                 .then(Mono.defer(() -> {
                     if (!session.userId().equals(order.getCustomerId())) {
@@ -177,7 +167,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                     }
 
                     order.setStatus(OrderStatus.CANCELLED);
-                    return saveAndReturnDetails(order);
+                    return saveAndReturnId(order);
                 }));
     }
 
@@ -235,11 +225,8 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
         return Mono.empty();
     }
 
-    private Mono<List<OrderDetail>> saveAndReturnDetails(Order order) {
+    private Mono<Long> saveAndReturnId(Order order) {
         return iOrderPersistencePort.save(order)
-                .flatMap(savedOrder ->
-                        iOrderPersistencePort.findOrderDetailById(savedOrder.getId())
-                                .collectList()
-                );
+                .map(Order::getId);
     }
 }

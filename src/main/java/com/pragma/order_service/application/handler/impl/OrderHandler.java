@@ -2,6 +2,7 @@ package com.pragma.order_service.application.handler.impl;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
+import com.pragma.order_service.application.dto.response.GenericResponse;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
@@ -27,13 +28,16 @@ public class OrderHandler implements IOrderHandler {
     private final OrderDtoMapper orderDtoMapper;
 
     @Override
-    public Mono<OrderResponse> updateStatus(Long orderId, UpdateOrderRequest request, String token) {
+    public Mono<GenericResponse> updateStatus(Long orderId, UpdateOrderRequest request, String token) {
         return iUpdateOrderServicePort.update(
                         orderId,
                         orderDtoMapper.toUpdateStatusCommand(request),
                         token
                 )
-                .map(this::toOrderResponse);
+                .map(updatedOrderId -> GenericResponse.builder()
+                        .id(updatedOrderId)
+                        .message("Estado del pedido actualizado exitosamente")
+                        .build());
     }
 
     @Override

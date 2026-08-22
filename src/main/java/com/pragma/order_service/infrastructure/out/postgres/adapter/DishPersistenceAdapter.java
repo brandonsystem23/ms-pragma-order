@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 @RequiredArgsConstructor
 public class DishPersistenceAdapter implements IDishPersistencePort {
@@ -36,6 +38,12 @@ public class DishPersistenceAdapter implements IDishPersistencePort {
     @Override
     public Mono<Dish> findById(Long dishId) {
         return dishRepository.findById(dishId)
+                .map(dishEntityMapper::toDomain);
+    }
+
+    @Override
+    public Flux<Dish> findByIds(List<Long> dishIds) {
+        return dishRepository.findAllById(dishIds)
                 .map(dishEntityMapper::toDomain);
     }
 

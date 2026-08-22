@@ -49,9 +49,12 @@ class ListOrdersUseCaseTest {
                 .restaurantId(1L)
                 .restaurantName("El Buen Sabor")
                 .status(OrderStatus.PENDING)
+                .employeeAssignedId(null)
+                .totalPrice(BigDecimal.valueOf(50000))
                 .dishId(10L)
                 .dishName("Pizza")
                 .quantity(BigDecimal.valueOf(2))
+                .dishPrice(BigDecimal.valueOf(20000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -63,9 +66,12 @@ class ListOrdersUseCaseTest {
                 .restaurantId(1L)
                 .restaurantName("El Buen Sabor")
                 .status(OrderStatus.PENDING)
+                .employeeAssignedId(null)
+                .totalPrice(BigDecimal.valueOf(50000))
                 .dishId(11L)
                 .dishName("Hamburguesa")
                 .quantity(BigDecimal.ONE)
+                .dishPrice(BigDecimal.valueOf(10000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -94,15 +100,18 @@ class ListOrdersUseCaseTest {
                     Assertions.assertEquals(1L, order.restaurantId());
                     Assertions.assertEquals("El Buen Sabor", order.nameRestaurant());
                     Assertions.assertEquals(OrderStatus.PENDING, order.status());
+                    Assertions.assertEquals(BigDecimal.valueOf(50000), order.totalPrice());
                     Assertions.assertEquals(2, order.items().size());
 
                     Assertions.assertEquals(10L, order.items().getFirst().dishId());
                     Assertions.assertEquals("Pizza", order.items().get(0).name());
                     Assertions.assertEquals(BigDecimal.valueOf(2), order.items().get(0).quantity());
+                    Assertions.assertEquals(BigDecimal.valueOf(20000), order.items().get(0).price());
 
                     Assertions.assertEquals(11L, order.items().get(1).dishId());
                     Assertions.assertEquals("Hamburguesa", order.items().get(1).name());
                     Assertions.assertEquals(BigDecimal.ONE, order.items().get(1).quantity());
+                    Assertions.assertEquals(BigDecimal.valueOf(10000), order.items().get(1).price());
                 })
                 .verifyComplete();
     }
