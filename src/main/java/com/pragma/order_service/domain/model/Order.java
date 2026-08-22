@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,8 @@ public class Order {
     private Long employeeAssignedId;
 
     private String status;
+
+    private BigDecimal totalPrice;
 
     private List<OrderItem> items;
 

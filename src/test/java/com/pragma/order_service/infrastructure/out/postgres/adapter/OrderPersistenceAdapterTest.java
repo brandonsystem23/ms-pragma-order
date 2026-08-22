@@ -3,11 +3,11 @@ package com.pragma.order_service.infrastructure.out.postgres.adapter;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderItem;
 import com.pragma.order_service.domain.model.query.OrderDetail;
+import com.pragma.order_service.infrastructure.out.postgres.dto.OrderSummary;
 import com.pragma.order_service.infrastructure.out.postgres.entity.OrderEntity;
 import com.pragma.order_service.infrastructure.out.postgres.entity.OrderItemEntity;
 import com.pragma.order_service.infrastructure.out.postgres.mapper.OrderEntityMapper;
 import com.pragma.order_service.infrastructure.out.postgres.mapper.OrderItemEntityMapper;
-import com.pragma.order_service.infrastructure.out.postgres.dto.OrderSummary;
 import com.pragma.order_service.infrastructure.out.postgres.repository.OrderItemRepository;
 import com.pragma.order_service.infrastructure.out.postgres.repository.OrderRepository;
 import org.junit.jupiter.api.Assertions;
@@ -62,9 +62,10 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(null)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .items(List.of(
-                        OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).build(),
-                        OrderItem.builder().dishId(11L).quantity(BigDecimal.ONE).build()
+                        OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).price(BigDecimal.valueOf(30000)).build(),
+                        OrderItem.builder().dishId(11L).quantity(BigDecimal.ONE).price(BigDecimal.valueOf(5000)).build()
                 ))
                 .build();
 
@@ -73,6 +74,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(null)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .build();
 
         OrderEntity savedOrderEntity = OrderEntity.builder()
@@ -81,6 +83,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(null)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -88,11 +91,13 @@ class OrderPersistenceAdapterTest {
         OrderItemEntity itemEntity1 = OrderItemEntity.builder()
                 .dishId(10L)
                 .quantity(BigDecimal.valueOf(2))
+                .price(BigDecimal.valueOf(30000))
                 .build();
 
         OrderItemEntity itemEntity2 = OrderItemEntity.builder()
                 .dishId(11L)
                 .quantity(BigDecimal.ONE)
+                .price(BigDecimal.valueOf(5000))
                 .build();
 
         OrderItemEntity savedItemEntity1 = OrderItemEntity.builder()
@@ -100,6 +105,7 @@ class OrderPersistenceAdapterTest {
                 .orderId(100L)
                 .dishId(10L)
                 .quantity(BigDecimal.valueOf(2))
+                .price(BigDecimal.valueOf(30000))
                 .build();
 
         OrderItemEntity savedItemEntity2 = OrderItemEntity.builder()
@@ -107,6 +113,7 @@ class OrderPersistenceAdapterTest {
                 .orderId(100L)
                 .dishId(11L)
                 .quantity(BigDecimal.ONE)
+                .price(BigDecimal.valueOf(5000))
                 .build();
 
         OrderItem savedItem1 = OrderItem.builder()
@@ -114,6 +121,7 @@ class OrderPersistenceAdapterTest {
                 .orderId(100L)
                 .dishId(10L)
                 .quantity(BigDecimal.valueOf(2))
+                .price(BigDecimal.valueOf(30000))
                 .build();
 
         OrderItem savedItem2 = OrderItem.builder()
@@ -121,6 +129,7 @@ class OrderPersistenceAdapterTest {
                 .orderId(100L)
                 .dishId(11L)
                 .quantity(BigDecimal.ONE)
+                .price(BigDecimal.valueOf(5000))
                 .build();
 
         Order mappedOrder = Order.builder()
@@ -129,6 +138,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(null)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .createdAt(savedOrderEntity.getCreatedAt())
                 .updatedAt(savedOrderEntity.getUpdatedAt())
                 .build();
@@ -154,7 +164,10 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(1L, result.getRestaurantId());
                     Assertions.assertNull(result.getEmployeeAssignedId());
                     Assertions.assertEquals("PENDIENTE", result.getStatus());
+                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.getTotalPrice());
                     Assertions.assertEquals(2, result.getItems().size());
+                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getItems().get(0).getPrice());
+                    Assertions.assertEquals(BigDecimal.valueOf(5000), result.getItems().get(1).getPrice());
                 })
                 .verifyComplete();
     }
@@ -167,8 +180,9 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .items(List.of(
-                        OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).build()
+                        OrderItem.builder().dishId(10L).quantity(BigDecimal.valueOf(2)).price(BigDecimal.valueOf(30000)).build()
                 ))
                 .build();
 
@@ -178,6 +192,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .build();
 
         OrderEntity savedOrderEntity = OrderEntity.builder()
@@ -186,6 +201,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -196,6 +212,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .createdAt(savedOrderEntity.getCreatedAt())
                 .updatedAt(savedOrderEntity.getUpdatedAt())
                 .build();
@@ -209,6 +226,7 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(100L, result.getId());
                     Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("EN_PREPARACION", result.getStatus());
+                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.getTotalPrice());
                     Assertions.assertEquals(1, result.getItems().size());
                 })
                 .verifyComplete();
@@ -226,9 +244,11 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El buen sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(65000))
                 .dishId(10L)
                 .dishName("Hamburguesa triple")
                 .quantity(BigDecimal.valueOf(2))
+                .dishPrice(BigDecimal.valueOf(30000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -241,14 +261,14 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El buen sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(65000))
                 .dishId(11L)
                 .dishName("Lomo saltado")
                 .quantity(BigDecimal.ONE)
+                .dishPrice(BigDecimal.valueOf(5000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
-
-
 
         OrderDetail detail1 = OrderDetail.builder()
                 .orderId(100L)
@@ -258,9 +278,11 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El buen sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(65000))
                 .dishId(10L)
                 .dishName("Hamburguesa triple")
                 .quantity(BigDecimal.valueOf(2))
+                .dishPrice(BigDecimal.valueOf(30000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -273,9 +295,11 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El buen sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(65000))
                 .dishId(11L)
                 .dishName("Lomo saltado")
                 .quantity(BigDecimal.ONE)
+                .dishPrice(BigDecimal.valueOf(5000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -290,14 +314,16 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(100L, result.getOrderId());
                     Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("Brandon Briones", result.getCustomerName());
+                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.getTotalPrice());
+                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getDishPrice());
                 })
                 .assertNext(result -> {
                     Assertions.assertEquals(11L, result.getDishId());
                     Assertions.assertEquals(30L, result.getEmployeeAssignedId());
+                    Assertions.assertEquals(BigDecimal.valueOf(5000), result.getDishPrice());
                 })
                 .verifyComplete();
     }
-
 
     @Test
     void shouldCountOrdersByRestaurantIdAndStatusSuccessfully() {
@@ -332,9 +358,11 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El Buen Sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(40000))
                 .dishId(10L)
                 .dishName("Pizza")
                 .quantity(BigDecimal.valueOf(2))
+                .dishPrice(BigDecimal.valueOf(20000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -347,9 +375,11 @@ class OrderPersistenceAdapterTest {
                 .restaurantName("El Buen Sabor")
                 .status("EN_PREPARACION")
                 .employeeAssignedId(30L)
+                .totalPrice(BigDecimal.valueOf(40000))
                 .dishId(10L)
                 .dishName("Pizza")
                 .quantity(BigDecimal.valueOf(2))
+                .dishPrice(BigDecimal.valueOf(20000))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -364,10 +394,11 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(100L, result.getOrderId());
                     Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("Juan Perez", result.getCustomerName());
+                    Assertions.assertEquals(BigDecimal.valueOf(40000), result.getTotalPrice());
+                    Assertions.assertEquals(BigDecimal.valueOf(20000), result.getDishPrice());
                 })
                 .verifyComplete();
     }
-
 
     @Test
     void shouldFindOrdersDetailByIdsEmpty() {
@@ -387,6 +418,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .items(null)
                 .build();
 
@@ -394,6 +426,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
         OrderEntity savedOrderEntity = OrderEntity.builder()
@@ -401,6 +434,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
         Order mappedOrder = Order.builder()
@@ -408,6 +442,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .items(List.of())
                 .build();
 
@@ -426,6 +461,7 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(20L, result.getCustomerId());
                     Assertions.assertEquals(1L, result.getRestaurantId());
                     Assertions.assertEquals("PENDIENTE", result.getStatus());
+                    Assertions.assertEquals(BigDecimal.ZERO, result.getTotalPrice());
                     Assertions.assertNotNull(result.getItems());
                     Assertions.assertTrue(result.getItems().isEmpty());
                 })
@@ -438,6 +474,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .items(List.of())
                 .build();
 
@@ -445,6 +482,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
         OrderEntity savedOrderEntity = OrderEntity.builder()
@@ -452,6 +490,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
         Order mappedOrder = Order.builder()
@@ -459,6 +498,7 @@ class OrderPersistenceAdapterTest {
                 .customerId(20L)
                 .restaurantId(1L)
                 .status("PENDIENTE")
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
         when(orderEntityMapper.toEntity(order))
@@ -476,6 +516,7 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(20L, result.getCustomerId());
                     Assertions.assertEquals(1L, result.getRestaurantId());
                     Assertions.assertEquals("PENDIENTE", result.getStatus());
+                    Assertions.assertEquals(BigDecimal.ZERO, result.getTotalPrice());
                 })
                 .verifyComplete();
     }
@@ -488,6 +529,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .build();
 
         Order order = Order.builder()
@@ -496,6 +538,7 @@ class OrderPersistenceAdapterTest {
                 .restaurantId(1L)
                 .employeeAssignedId(30L)
                 .status("EN_PREPARACION")
+                .totalPrice(BigDecimal.valueOf(65000))
                 .build();
 
         when(orderRepository.findById(100L))
@@ -511,6 +554,7 @@ class OrderPersistenceAdapterTest {
                     Assertions.assertEquals(1L, result.getRestaurantId());
                     Assertions.assertEquals(30L, result.getEmployeeAssignedId());
                     Assertions.assertEquals("EN_PREPARACION", result.getStatus());
+                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.getTotalPrice());
                 })
                 .verifyComplete();
     }

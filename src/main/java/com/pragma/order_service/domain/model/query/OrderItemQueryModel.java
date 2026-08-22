@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record OrderItemQueryModel(
         Long dishId,
         String name,
-        BigDecimal quantity
+        BigDecimal quantity,
+        BigDecimal price
 ) {
 }

@@ -27,4 +27,6 @@ public class OrderItemEntity {
     private Long dishId;
 
     private BigDecimal quantity;
+
+    private BigDecimal price;
 }

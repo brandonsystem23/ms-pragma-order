@@ -13,6 +13,7 @@ import com.pragma.order_service.domain.spi.IDishPersistencePort;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
+import com.pragma.order_service.domain.spi.ITraceabilityWebClientPort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.usecase.CreateDishUseCase;
 import com.pragma.order_service.domain.usecase.ListDishesUseCase;
@@ -28,8 +29,11 @@ import com.pragma.order_service.domain.usecase.ListOrdersUseCase;
 import com.pragma.order_service.domain.usecase.UpdateOrderUseCase;
 import com.pragma.order_service.domain.validation.order.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderDomainValidator;
+import com.pragma.order_service.domain.validation.order.OrderPinValidator;
 import com.pragma.order_service.domain.validation.order.OrderRegistrationValidator;
 import com.pragma.order_service.domain.validation.order.OrderRetrieveValidator;
+import com.pragma.order_service.domain.validation.order.OrderStatusUpdateValidator;
+import com.pragma.order_service.domain.validation.order.OrderTraceabilityValidator;
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
 import com.pragma.order_service.domain.usecase.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.usecase.ListRestaurantsUseCase;
@@ -210,15 +214,23 @@ public class BeanConfiguration {
     @Bean
     public ICreateOrderServicePort createOrderUseCase(
             IOrderPersistencePort iOrderPersistencePort,
+            IDishPersistencePort iDishPersistencePort,
+            ITraceabilityWebClientPort iTraceabilityWebClientPort,
             OrderRegistrationValidator orderRegistrationValidator,
-            OrderDomainValidator orderDomainValidator
+            OrderDomainValidator orderDomainValidator,
+            OrderTraceabilityValidator orderTraceabilityValidator
     ) {
         return new CreateOrderUseCase(
                 iOrderPersistencePort,
+                iDishPersistencePort,
+                iTraceabilityWebClientPort,
                 orderRegistrationValidator,
-                orderDomainValidator
+                orderDomainValidator,
+                orderTraceabilityValidator
         );
     }
+
+
 
     @Bean
     public ListOrdersDomainValidator listOrdersDomainValidator() {
@@ -252,21 +264,48 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public OrderPinValidator orderPinValidator(IRedisCachePort iRedisCachePort) {
+        return new OrderPinValidator(iRedisCachePort);
+    }
+
+
+    @Bean
     public IUpdateOrderServicePort updateOrderStatusUseCase(
             IOrderPersistencePort iOrderPersistencePort,
-            IRedisCachePort iRedisCachePort,
             IRestaurantPersistencePort iRestaurantPersistencePort,
             IUserWebClientPort iUserWebClientPort,
             INotificationWebClientPort iNotificationWebClientPort,
-            UpdateOrderDomainValidator updateOrderStatusDomainValidator
+            ITraceabilityWebClientPort iTraceabilityWebClientPort,
+            UpdateOrderDomainValidator updateOrderStatusDomainValidator,
+            OrderStatusUpdateValidator orderStatusUpdateValidator,
+            OrderPinValidator orderPinValidator
     ) {
         return new UpdateOrderUseCase(
                 iOrderPersistencePort,
-                iRedisCachePort,
                 iRestaurantPersistencePort,
                 iUserWebClientPort,
                 iNotificationWebClientPort,
-                updateOrderStatusDomainValidator
+                iTraceabilityWebClientPort,
+                updateOrderStatusDomainValidator,
+                orderStatusUpdateValidator,
+                orderPinValidator
         );
     }
+
+    @Bean
+    public OrderTraceabilityValidator orderTraceabilityValidator(
+            IRestaurantPersistencePort iRestaurantPersistencePort
+    ) {
+        return new OrderTraceabilityValidator(iRestaurantPersistencePort);
+    }
+
+
+    @Bean
+    public OrderStatusUpdateValidator orderStatusUpdateValidator(
+            IRedisCachePort iRedisCachePort,
+            IRestaurantPersistencePort iRestaurantPersistencePort
+    ) {
+        return new OrderStatusUpdateValidator(iRedisCachePort, iRestaurantPersistencePort);
+    }
+
 }

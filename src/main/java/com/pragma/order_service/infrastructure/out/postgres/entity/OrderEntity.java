@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -30,6 +31,9 @@ public class OrderEntity {
     private Long employeeAssignedId;
 
     private String status;
+
+    @Column("total_price")
+    private BigDecimal totalPrice;
 
     @Column("created_at")
     private LocalDateTime createdAt;
