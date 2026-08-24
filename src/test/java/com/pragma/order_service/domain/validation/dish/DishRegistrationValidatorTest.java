@@ -51,71 +51,112 @@ class DishRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenTokenIsInvalid() {
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.empty());
 
-        when(dishPersistencePort.existsByName(anyString())).thenReturn(Mono.just(true));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.empty());
 
-        StepVerifier.create(dishRegistrationValidator.validate("Pizza Hawaiana", 1L, "bad-token"))
+        StepVerifier.create(
+                        dishRegistrationValidator.validate(
+                                "Pizza Hawaiana",
+                                1L,
+                                "bad-token"
+                        )
+                )
                 .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("Token inválido o expirado", error.getMessage());
+                    Assertions.assertInstanceOf(
+                            DomainException.class,
+                            error
+                    );
+                    Assertions.assertEquals(
+                            "Token inválido o expirado",
+                            error.getMessage()
+                    );
                 })
                 .verify();
     }
 
     @Test
     void shouldFailWhenAuthenticatedUserIsNotOwner() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(2L)
                 .role("ADMINISTRADOR")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(dishPersistencePort.existsByName(anyString())).thenReturn(Mono.just(true));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
 
         StepVerifier.create(dishRegistrationValidator.validate("Pizza Hawaiana", 1L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("No tienes permisos para crear platos", error.getMessage());
+                    Assertions.assertInstanceOf(
+                            DomainException.class,
+                            error
+                    );
+                    Assertions.assertEquals(
+                            "No tienes permisos para crear platos",
+                            error.getMessage()
+                    );
                 })
                 .verify();
     }
 
     @Test
     void shouldFailWhenRestaurantDoesNotExist() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(2L)
                 .role("PROPIETARIO")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iRestaurantPersistencePort.existById(anyLong())).thenReturn(Mono.just(false));
-        when(dishPersistencePort.existsByName(anyString())).thenReturn(Mono.just(true));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
+
+        when(iRestaurantPersistencePort.existById(anyLong()))
+                .thenReturn(Mono.just(false));
 
         StepVerifier.create(dishRegistrationValidator.validate("Pizza Hawaiana", 1L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("El restaurante no existe", error.getMessage());
+                    Assertions.assertInstanceOf(
+                            DomainException.class,
+                            error
+                    );
+                    Assertions.assertEquals(
+                            "El restaurante no existe",
+                            error.getMessage()
+                    );
                 })
                 .verify();
     }
 
     @Test
     void shouldFailWhenUserIsNotOwnerOfRestaurant() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(2L)
                 .role("PROPIETARIO")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(dishPersistencePort.existsByName(anyString())).thenReturn(Mono.just(true));
-        when(iRestaurantPersistencePort.existById(anyLong())).thenReturn(Mono.just(true));
-        when(iRestaurantPersistencePort.existByOwner(anyLong(), anyLong())).thenReturn(Mono.just(false));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
+
+        when(iRestaurantPersistencePort.existById(anyLong()))
+                .thenReturn(Mono.just(true));
+
+        when(iRestaurantPersistencePort.existByOwner(
+                anyLong(),
+                anyLong()
+        )).thenReturn(Mono.just(false));
 
         StepVerifier.create(dishRegistrationValidator.validate("Pizza Hawaiana", 1L, "token-test"))
                 .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("Usted no es propietario del restaurante", error.getMessage());
+                    Assertions.assertInstanceOf(
+                            DomainException.class,
+                            error
+                    );
+                    Assertions.assertEquals(
+                            "Usted no es propietario del restaurante",
+                            error.getMessage()
+                    );
                 })
                 .verify();
     }

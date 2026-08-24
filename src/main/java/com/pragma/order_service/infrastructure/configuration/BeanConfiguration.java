@@ -33,7 +33,6 @@ import com.pragma.order_service.domain.validation.order.OrderPinValidator;
 import com.pragma.order_service.domain.validation.order.OrderRegistrationValidator;
 import com.pragma.order_service.domain.validation.order.OrderRetrieveValidator;
 import com.pragma.order_service.domain.validation.order.OrderStatusUpdateValidator;
-import com.pragma.order_service.domain.validation.order.OrderTraceabilityValidator;
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
 import com.pragma.order_service.domain.usecase.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.usecase.ListRestaurantsUseCase;
@@ -217,16 +216,14 @@ public class BeanConfiguration {
             IDishPersistencePort iDishPersistencePort,
             ITraceabilityWebClientPort iTraceabilityWebClientPort,
             OrderRegistrationValidator orderRegistrationValidator,
-            OrderDomainValidator orderDomainValidator,
-            OrderTraceabilityValidator orderTraceabilityValidator
+            OrderDomainValidator orderDomainValidator
     ) {
         return new CreateOrderUseCase(
                 iOrderPersistencePort,
                 iDishPersistencePort,
                 iTraceabilityWebClientPort,
                 orderRegistrationValidator,
-                orderDomainValidator,
-                orderTraceabilityValidator
+                orderDomainValidator
         );
     }
 
@@ -290,13 +287,6 @@ public class BeanConfiguration {
                 orderStatusUpdateValidator,
                 orderPinValidator
         );
-    }
-
-    @Bean
-    public OrderTraceabilityValidator orderTraceabilityValidator(
-            IRestaurantPersistencePort iRestaurantPersistencePort
-    ) {
-        return new OrderTraceabilityValidator(iRestaurantPersistencePort);
     }
 
 

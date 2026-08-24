@@ -1,5 +1,6 @@
 package com.pragma.order_service.domain.usecase;
 
+import com.pragma.order_service.domain.builder.RestaurantBuilder;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.api.ICreateRestaurantServicePort;
@@ -29,21 +30,10 @@ public class CreateRestaurantUseCase implements ICreateRestaurantServicePort {
                     )
                     .then(Mono.defer(() ->
                          iRestaurantPersistencePort.save(
-                                 buildToRestaurant(createRestaurantCommand)
+                                 RestaurantBuilder.buildRestaurant(createRestaurantCommand)
                          )
                     ));
         });
     }
 
-    private Restaurant buildToRestaurant(CreateRestaurantCommand createRestaurantCommand) {
-        return Restaurant.builder()
-                .name(createRestaurantCommand.name())
-                .nit(createRestaurantCommand.nit())
-                .address(createRestaurantCommand.address())
-                .phone(createRestaurantCommand.phone())
-                .urlLogo(createRestaurantCommand.urlLogo())
-                .ownerId(createRestaurantCommand.ownerId())
-                .status(true)
-                .build();
-    }
 }

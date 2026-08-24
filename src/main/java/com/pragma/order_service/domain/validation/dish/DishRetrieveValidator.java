@@ -22,16 +22,8 @@ public class DishRetrieveValidator {
                         DomainErrorCode.INVALID_TOKEN,
                         DomainErrorMessages.INVALID_TOKEN
                 )))
-                .map(authSessionRedisValue -> AuthSession.builder()
-                        .userId(authSessionRedisValue.userId())
-                        .fullName(authSessionRedisValue.fullName())
-                        .role(authSessionRedisValue.role())
-                        .numberDocument(authSessionRedisValue.numberDocument())
-                        .phone(authSessionRedisValue.phone())
-                        .email(authSessionRedisValue.email())
-                        .build())
                 .flatMap(this::checkClientRole)
-                .then(validateRestaurantExists(restaurantId));
+                .then(Mono.defer(() -> validateRestaurantExists(restaurantId)));
     }
 
     private Mono<AuthSession> checkClientRole(AuthSession authSession) {

@@ -2,7 +2,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
-import com.pragma.order_service.application.dto.response.GenericResponse;
+import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.handler.IOrderHandler;
@@ -10,6 +10,7 @@ import com.pragma.order_service.infrastructure.util.UtilTokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Pedidos", description = "Endpoints para gestión de pedidos")
 public class OrderController {
 
@@ -31,6 +33,9 @@ public class OrderController {
             @RequestBody CreateOrderRequest request
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para crear pedido en restaurante con ID={}", request.restaurantId());
+
         return iOrderHandler.create(request, token);
     }
 
@@ -46,12 +51,15 @@ public class OrderController {
                     - CANCELADO: cancela el pedido
                     """
     )
-    public Mono<GenericResponse> updateStatus(
+    public Mono<UpdateOrderResponse> updateStatus(
             @PathVariable Long orderId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody UpdateOrderRequest request
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para cambiar el estado de pedido con ID={}", orderId);
+
         return iOrderHandler.updateStatus(orderId, request, token);
     }
 
@@ -65,6 +73,9 @@ public class OrderController {
             @RequestParam(defaultValue = "10") int size
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para listar pedidos con estado {}", status);
+
         return iOrderHandler.list(token, status, page, size);
     }
 }

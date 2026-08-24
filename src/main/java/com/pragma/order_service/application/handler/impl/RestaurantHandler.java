@@ -2,7 +2,7 @@ package com.pragma.order_service.application.handler.impl;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
 import com.pragma.order_service.application.dto.response.PagedResponse;
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.handler.IRestaurantHandler;
 import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
@@ -30,9 +30,9 @@ public class RestaurantHandler implements IRestaurantHandler {
     }
 
     @Override
-    public Mono<PagedResponse<RestaurantListItemResponse>> list(String token, int page, int size) {
+    public Mono<PagedResponse<RestaurantListResponse>> list(String token, int page, int size) {
         return iListRestaurantsServicePort.list(token, page, size)
-                .map(result -> PagedResponse.<RestaurantListItemResponse>builder()
+                .map(result -> PagedResponse.<RestaurantListResponse>builder()
                         .content(result.content().stream()
                                 .map(restaurantDtoMapper::toResponse)
                                 .toList())

@@ -1,6 +1,6 @@
 package com.pragma.order_service.domain.usecase;
 
-import com.pragma.order_service.domain.model.Restaurant;
+import com.pragma.order_service.domain.builder.RestaurantBuilder;
 import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.model.query.RestaurantListItem;
 import com.pragma.order_service.domain.api.IListRestaurantsServicePort;
@@ -28,18 +28,18 @@ public class ListRestaurantsUseCase implements IListRestaurantsServicePort {
                     .then(Mono.defer(() ->
                             Mono.zip(
                                     iRestaurantPersistencePort.findActiveRestaurantsOrdered(page, size)
-                                            .map(this::buildToRestaurantListItem)
+                                            .map(RestaurantBuilder::buildRestaurantListItem)
                                             .collectList(),
                                     iRestaurantPersistencePort.countActiveRestaurants()
                             )
                     ))
                     .map(tuple -> {
-                        var content = tuple.getT1();
+                        var listRestaurants = tuple.getT1();
                         long totalElements = tuple.getT2();
                         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
 
                         return PageResult.<RestaurantListItem>builder()
-                                .content(content)
+                                .content(listRestaurants)
                                 .page(page)
                                 .size(size)
                                 .totalElements(totalElements)
@@ -49,11 +49,4 @@ public class ListRestaurantsUseCase implements IListRestaurantsServicePort {
         });
     }
 
-    private RestaurantListItem buildToRestaurantListItem(Restaurant restaurant) {
-        return RestaurantListItem.builder()
-                .id(restaurant.getId())
-                .name(restaurant.getName())
-                .urlLogo(restaurant.getUrlLogo())
-                .build();
-    }
 }

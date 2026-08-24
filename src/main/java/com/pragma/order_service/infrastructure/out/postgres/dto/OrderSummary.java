@@ -18,6 +18,7 @@ public class OrderSummary {
     private String customerName;
     private Long restaurantId;
     private String restaurantName;
+    private Long ownerId;
     private String status;
     private Long employeeAssignedId;
     private BigDecimal totalPrice;
