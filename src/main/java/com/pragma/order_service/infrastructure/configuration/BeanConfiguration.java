@@ -269,7 +269,6 @@ public class BeanConfiguration {
     @Bean
     public IUpdateOrderServicePort updateOrderStatusUseCase(
             IOrderPersistencePort iOrderPersistencePort,
-            IRestaurantPersistencePort iRestaurantPersistencePort,
             IUserWebClientPort iUserWebClientPort,
             INotificationWebClientPort iNotificationWebClientPort,
             ITraceabilityWebClientPort iTraceabilityWebClientPort,
@@ -279,7 +278,6 @@ public class BeanConfiguration {
     ) {
         return new UpdateOrderUseCase(
                 iOrderPersistencePort,
-                iRestaurantPersistencePort,
                 iUserWebClientPort,
                 iNotificationWebClientPort,
                 iTraceabilityWebClientPort,

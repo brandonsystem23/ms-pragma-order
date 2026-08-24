@@ -79,6 +79,8 @@ public class CreateOrderUseCase implements ICreateOrderServicePort {
                 detail,
                 detail.getCustomerId(),
                 RoleNames.CLIENT,
+                null,
+                null,
                 "Pedido creado");
 
         return iTraceabilityWebClientPort.create(traceability, token)

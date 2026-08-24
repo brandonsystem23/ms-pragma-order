@@ -6,6 +6,7 @@ import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderStatus;
+import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.Traceability;
 import com.pragma.order_service.domain.model.UserSummary;
 import com.pragma.order_service.domain.model.auth.AuthSession;
@@ -14,7 +15,6 @@ import com.pragma.order_service.domain.api.IUpdateOrderServicePort;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
-import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.spi.ITraceabilityWebClientPort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.validation.order.OrderPinValidator;
@@ -29,7 +29,6 @@ import java.util.Comparator;
 public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
     private final IOrderPersistencePort iOrderPersistencePort;
-    private final IRestaurantPersistencePort iRestaurantPersistencePort;
     private final IUserWebClientPort iUserWebClientPort;
     private final INotificationWebClientPort iNotificationWebClientPort;
     private final ITraceabilityWebClientPort iTraceabilityWebClientPort;
@@ -121,6 +120,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
     }
 
     private Mono<Void> buildAndSendTraceability(Order order, AuthSession session, String description, String token) {
+
         return iOrderPersistencePort.findOrderDetailById(order.getId())
                 .collectList()
                 .flatMap(orderDetails -> {
@@ -128,16 +128,24 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                             .max(Comparator.comparing(OrderDetail::getUpdatedAt))
                             .orElseThrow();
 
-                    return sendTraceability(latestDetail, description, token, session.role());
+                    return sendTraceability(latestDetail, description, token, session);
                 });
     }
 
-    private Mono<Void> sendTraceability(OrderDetail detail, String description, String token, String role) {
+    private Mono<Void> sendTraceability(OrderDetail detail, String description, String token, AuthSession session) {
+        Long employeeAssignedId = null;
+        String employeeAssignedName = null;
+        if (session.role().equalsIgnoreCase(RoleNames.EMPLOYEE)) {
+            employeeAssignedId = session.userId();
+            employeeAssignedName = session.fullName();
+        }
 
         Traceability traceability = OrderBuilder.buildTraceability(
                 detail,
                 detail.getCustomerId(),
-                role,
+                session.role(),
+                employeeAssignedId,
+                employeeAssignedName,
                 description
         );
 

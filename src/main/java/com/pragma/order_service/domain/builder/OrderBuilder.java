@@ -4,7 +4,9 @@ import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderItem;
 import com.pragma.order_service.domain.model.OrderStatus;
+import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.Traceability;
+import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.model.query.OrderItemQueryModel;
@@ -58,6 +60,7 @@ public final class OrderBuilder {
     }
 
     public static Traceability buildTraceability(OrderDetail detail, Long changedByUserId, String changedByRole,
+                                                 Long employeeAssignedId, String employeeAssignedName,
                                                  String description) {
         return Traceability.builder()
                 .orderId(detail.getOrderId())
@@ -66,8 +69,8 @@ public final class OrderBuilder {
                 .restaurantId(detail.getRestaurantId())
                 .restaurantName(detail.getRestaurantName())
                 .ownerRestaurant(detail.getOwnerId())
-                .employeeAssignedId(null)
-                .employeeAssignedName(null)
+                .employeeAssignedId(employeeAssignedId)
+                .employeeAssignedName(employeeAssignedName)
                 .status(detail.getStatus())
                 .description(description)
                 .changedByUserId(changedByUserId)
