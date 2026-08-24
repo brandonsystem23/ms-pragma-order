@@ -1,12 +1,8 @@
 package com.pragma.order_service.domain.usecase;
 
-import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.Order;
-import com.pragma.order_service.domain.model.OrderItem;
-import com.pragma.order_service.domain.model.OrderStatus;
-import com.pragma.order_service.domain.model.Restaurant;
-import com.pragma.order_service.domain.model.TraceabilityRecord;
+import com.pragma.order_service.domain.model.Traceability;
 import com.pragma.order_service.domain.model.command.CreateOrderCommand;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
 import com.pragma.order_service.domain.model.query.OrderDetail;
@@ -15,11 +11,9 @@ import com.pragma.order_service.domain.spi.IOrderPersistencePort;
 import com.pragma.order_service.domain.spi.ITraceabilityWebClientPort;
 import com.pragma.order_service.domain.validation.order.OrderDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderRegistrationValidator;
-import com.pragma.order_service.domain.validation.order.OrderTraceabilityValidator;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,20 +25,27 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CreateOrderUseCaseTest {
 
     @Mock
-    private IOrderPersistencePort orderPersistencePort;
+    private IOrderPersistencePort iOrderPersistencePort;
 
     @Mock
-    private IDishPersistencePort dishPersistencePort;
+    private IDishPersistencePort iDishPersistencePort;
 
     @Mock
-    private ITraceabilityWebClientPort traceabilityWebClientPort;
+    private ITraceabilityWebClientPort iTraceabilityWebClientPort;
 
     @Mock
     private OrderRegistrationValidator orderRegistrationValidator;
@@ -52,299 +53,329 @@ class CreateOrderUseCaseTest {
     @Mock
     private OrderDomainValidator orderDomainValidator;
 
-    @Mock
-    private OrderTraceabilityValidator orderTraceabilityValidator;
-
     @InjectMocks
-    private CreateOrderUseCase service;
+    private CreateOrderUseCase createOrderUseCase;
 
-    @Test
-    void shouldCreateOrderSuccessfully() {
-        CreateOrderCommand command = new CreateOrderCommand(
-                1L,
-                List.of(
-                        new CreateOrderItemCommand(10L, BigDecimal.valueOf(2)),
-                        new CreateOrderItemCommand(11L, BigDecimal.ONE)
-                )
-        );
+    private CreateOrderCommand createOrderCommand;
+    private CreateOrderItemCommand itemCommand;
+    private Dish dish;
+    private Order order;
+    private OrderDetail orderDetail;
 
-        Dish dish1 = Dish.builder()
+    private final String token = "token-test";
+
+    @BeforeEach
+    void setUp() {
+
+        itemCommand = new CreateOrderItemCommand(10L, BigDecimal.valueOf(2));
+
+        createOrderCommand = new CreateOrderCommand(1L, List.of(itemCommand));
+
+        dish = Dish.builder()
                 .id(10L)
-                .price(BigDecimal.valueOf(30000))
+                .name("Hamburguesa")
+                .description("Hamburguesa clásica")
+                .price(BigDecimal.valueOf(20000))
+                .category("FASTFOOD")
+                .status(true)
                 .restaurantId(1L)
                 .build();
 
-        Dish dish2 = Dish.builder()
-                .id(11L)
-                .price(BigDecimal.valueOf(5000))
-                .restaurantId(1L)
-                .build();
-
-        LocalDateTime now = LocalDateTime.now();
-
-        OrderDetail row1 = OrderDetail.builder()
-                .orderId(100L)
-                .customerId(20L)
-                .customerName("Brandon Briones")
-                .restaurantId(1L)
-                .restaurantName("El buen sabor")
-                .status("PENDIENTE")
-                .totalPrice(BigDecimal.valueOf(65000))
-                .dishId(10L)
-                .dishName("Hamburguesa triple")
-                .quantity(BigDecimal.valueOf(2))
-                .dishPrice(BigDecimal.valueOf(30000))
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
-
-        OrderDetail row2 = OrderDetail.builder()
-                .orderId(100L)
-                .customerId(20L)
-                .customerName("Brandon Briones")
-                .restaurantId(1L)
-                .restaurantName("El buen sabor")
-                .status("PENDIENTE")
-                .totalPrice(BigDecimal.valueOf(65000))
-                .dishId(11L)
-                .dishName("Lomo saltado")
-                .quantity(BigDecimal.ONE)
-                .dishPrice(BigDecimal.valueOf(5000))
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
-
-        Order savedOrder = Order.builder()
+        order = Order.builder()
                 .id(100L)
                 .customerId(20L)
                 .restaurantId(1L)
-                .status(OrderStatus.PENDING)
-                .totalPrice(BigDecimal.valueOf(65000))
-                .items(List.of(
-                        OrderItem.builder()
-                                .id(1L)
-                                .orderId(100L)
-                                .dishId(10L)
-                                .quantity(BigDecimal.valueOf(2))
-                                .price(BigDecimal.valueOf(30000))
-                                .build(),
-                        OrderItem.builder()
-                                .id(2L)
-                                .orderId(100L)
-                                .dishId(11L)
-                                .quantity(BigDecimal.ONE)
-                                .price(BigDecimal.valueOf(5000))
-                                .build()
-                ))
                 .build();
 
-        Restaurant restaurant = Restaurant.builder()
-                .id(1L)
-                .name("El buen sabor")
-                .ownerId(5L)
-                .build();
-
-        TraceabilityRecord traceabilityRecord = TraceabilityRecord.builder()
-                .id("trace-1")
-                .orderId(100L)
-                .build();
-
-        doNothing().when(orderDomainValidator).validateForCreate(any());
-        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(20L));
-        when(dishPersistencePort.findByIds(anyList())).thenReturn(Flux.just(dish1, dish2));
-        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(row1, row2));
-        when(orderTraceabilityValidator.validateAndGetRestaurant(anyList())).thenReturn(Mono.just(restaurant));
-        when(traceabilityWebClientPort.create(any(), anyString())).thenReturn(Mono.just(traceabilityRecord));
-
-        StepVerifier.create(service.create(command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(2, result.size());
-                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.getFirst().getTotalPrice());
-                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getFirst().getDishPrice());
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldBuildOrderWithPendingStatusAndTotalPriceBeforeSaving() {
-        CreateOrderCommand command = new CreateOrderCommand(
-                5L,
-                List.of(new CreateOrderItemCommand(99L, BigDecimal.valueOf(3)))
-        );
-
-        Dish dish = Dish.builder()
-                .id(99L)
-                .price(BigDecimal.valueOf(10000))
-                .restaurantId(5L)
-                .build();
-
-        LocalDateTime now = LocalDateTime.now();
-
-        OrderDetail row = OrderDetail.builder()
-                .orderId(100L)
-                .customerId(33L)
-                .customerName("Brandon Briones")
-                .restaurantId(5L)
-                .restaurantName("El buen sabor")
-                .status("PENDIENTE")
-                .totalPrice(BigDecimal.valueOf(30000))
-                .dishId(99L)
-                .dishName("Hamburguesa triple")
-                .quantity(BigDecimal.valueOf(3))
-                .dishPrice(BigDecimal.valueOf(10000))
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
-
-        Restaurant restaurant = Restaurant.builder()
-                .id(5L)
-                .name("El buen sabor")
-                .ownerId(7L)
-                .build();
-
-        TraceabilityRecord traceabilityRecord = TraceabilityRecord.builder()
-                .id("trace-2")
-                .orderId(100L)
-                .build();
-
-        doNothing().when(orderDomainValidator).validateForCreate(any());
-        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(33L));
-        when(dishPersistencePort.findByIds(anyList())).thenReturn(Flux.just(dish));
-
-        when(orderPersistencePort.save(any()))
-                .thenAnswer(invocation -> {
-                    Order orderToSave = invocation.getArgument(0);
-                    orderToSave.setId(100L);
-                    return Mono.just(orderToSave);
-                });
-
-        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(row));
-        when(orderTraceabilityValidator.validateAndGetRestaurant(anyList())).thenReturn(Mono.just(restaurant));
-        when(traceabilityWebClientPort.create(any(), anyString())).thenReturn(Mono.just(traceabilityRecord));
-
-        StepVerifier.create(service.create(command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1, result.size());
-                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getFirst().getTotalPrice());
-                    Assertions.assertEquals(BigDecimal.valueOf(10000), result.getFirst().getDishPrice());
-                })
-                .verifyComplete();
-
-        ArgumentCaptor<Order> captor = ArgumentCaptor.forClass(Order.class);
-        verify(orderPersistencePort).save(captor.capture());
-
-        Order orderSent = captor.getValue();
-        Assertions.assertEquals(OrderStatus.PENDING, orderSent.getStatus());
-        Assertions.assertEquals(BigDecimal.valueOf(30000), orderSent.getTotalPrice());
-        Assertions.assertEquals(33L, orderSent.getCustomerId());
-        Assertions.assertEquals(5L, orderSent.getRestaurantId());
-        Assertions.assertEquals(1, orderSent.getItems().size());
-        Assertions.assertEquals(BigDecimal.valueOf(10000), orderSent.getItems().getFirst().getPrice());
-    }
-
-    @Test
-    void shouldReturnOrderDetailsWhenOrderDetailsAreEmpty() {
-        CreateOrderCommand command = new CreateOrderCommand(
-                1L,
-                List.of(new CreateOrderItemCommand(10L, BigDecimal.ONE))
-        );
-
-        Dish dish = Dish.builder()
-                .id(10L)
-                .price(BigDecimal.valueOf(15000))
-                .restaurantId(1L)
-                .build();
-
-        Order savedOrder = Order.builder()
-                .id(100L)
-                .customerId(20L)
-                .restaurantId(1L)
-                .status(OrderStatus.PENDING)
-                .totalPrice(BigDecimal.valueOf(15000))
-                .items(List.of(
-                        OrderItem.builder()
-                                .dishId(10L)
-                                .quantity(BigDecimal.ONE)
-                                .price(BigDecimal.valueOf(15000))
-                                .build()
-                ))
-                .build();
-
-        doNothing().when(orderDomainValidator).validateForCreate(any());
-        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(20L));
-        when(dishPersistencePort.findByIds(anyList())).thenReturn(Flux.just(dish));
-        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.empty());
-        when(orderTraceabilityValidator.validateAndGetRestaurant(anyList())).thenReturn(Mono.empty());
-
-        StepVerifier.create(service.create(command, "token-test"))
-                .assertNext(result -> Assertions.assertTrue(result.isEmpty()))
-                .verifyComplete();
-
-        verify(traceabilityWebClientPort, never()).create(any(), anyString());
-    }
-
-    @Test
-    void shouldFailWhenRestaurantNotFoundDuringTraceabilityCreation() {
-        CreateOrderCommand command = new CreateOrderCommand(
-                1L,
-                List.of(new CreateOrderItemCommand(10L, BigDecimal.ONE))
-        );
-
-        Dish dish = Dish.builder()
-                .id(10L)
-                .price(BigDecimal.valueOf(15000))
-                .restaurantId(1L)
-                .build();
-
-        LocalDateTime now = LocalDateTime.now();
-
-        OrderDetail detail = OrderDetail.builder()
+        orderDetail = OrderDetail.builder()
                 .orderId(100L)
                 .customerId(20L)
                 .customerName("Juan Perez")
                 .restaurantId(1L)
-                .restaurantName("El buen sabor")
+                .restaurantName("Restaurante Test")
                 .status("PENDIENTE")
-                .totalPrice(BigDecimal.valueOf(15000))
+                .employeeAssignedId(null)
+                .totalPrice(BigDecimal.valueOf(40000))
                 .dishId(10L)
-                .dishName("Pizza")
-                .quantity(BigDecimal.ONE)
-                .dishPrice(BigDecimal.valueOf(15000))
-                .createdAt(now)
-                .updatedAt(now)
+                .dishName("Hamburguesa")
+                .dishPrice(BigDecimal.valueOf(20000))
+                .quantity(BigDecimal.valueOf(2))
+                .ownerId(30L)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
+    }
 
-        Order savedOrder = Order.builder()
-                .id(100L)
-                .customerId(20L)
-                .restaurantId(1L)
-                .status(OrderStatus.PENDING)
-                .totalPrice(BigDecimal.valueOf(15000))
-                .items(List.of(
-                        OrderItem.builder()
-                                .dishId(10L)
-                                .quantity(BigDecimal.ONE)
-                                .price(BigDecimal.valueOf(15000))
-                                .build()
-                ))
-                .build();
+    @Test
+    void shouldCreateOrderSuccessfully() {
 
-        doNothing().when(orderDomainValidator).validateForCreate(any());
-        when(orderRegistrationValidator.validate(any(), any(), anyString())).thenReturn(Mono.just(20L));
-        when(dishPersistencePort.findByIds(anyList())).thenReturn(Flux.just(dish));
-        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
-        when(orderPersistencePort.findOrderDetailById(anyLong())).thenReturn(Flux.just(detail));
-        when(orderTraceabilityValidator.validateAndGetRestaurant(anyList()))
-                .thenReturn(Mono.error(new DomainException(null, "El restaurante no existe")));
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
 
-        StepVerifier.create(service.create(command, "token-test"))
-                .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("El restaurante no existe", error.getMessage());
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.just(order));
+
+        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
+                .thenReturn(Flux.just(orderDetail));
+
+        when(iTraceabilityWebClientPort.create(
+                any(Traceability.class),
+                anyString()
+        )).thenReturn(Mono.empty());
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .assertNext(result -> {
+
+                    assertNotNull(result);
+
+                    assertEquals(100L, result.id());
+
+                    assertEquals(20L, result.customerId());
+
+                    assertEquals("Juan Perez", result.nameCustomer());
+
+                    assertEquals(1L, result.restaurantId());
+
+                    assertEquals("Restaurante Test", result.nameRestaurant());
+
+                    assertEquals("PENDIENTE", result.status());
                 })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldPropagateErrorWhenRegistrationValidationFails() {
+
+        RuntimeException exception = new RuntimeException("Error validando registro");
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.error(exception));
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
                 .verify();
     }
 
+    @Test
+    void shouldPropagateErrorWhenFindingDishesFails() {
+
+        RuntimeException exception = new RuntimeException("Error obteniendo platos");
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.error(exception));
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
+                .verify();
+    }
+
+    @Test
+    void shouldPropagateErrorWhenSavingOrderFails() {
+
+        RuntimeException exception = new RuntimeException("Error guardando pedido");
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.error(exception));
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
+                .verify();
+    }
+
+    @Test
+    void shouldPropagateErrorWhenFindingOrderDetailFails() {
+
+        RuntimeException exception = new RuntimeException("Error obteniendo detalle del pedido");
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.just(order));
+
+        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
+                .thenReturn(Flux.error(exception));
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
+                .verify();
+    }
+
+    @Test
+    void shouldPropagateErrorWhenSendingTraceabilityFails() {
+
+        RuntimeException exception = new RuntimeException("Error enviando trazabilidad");
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.just(order));
+
+        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
+                .thenReturn(Flux.just(orderDetail));
+
+        when(iTraceabilityWebClientPort.create(
+                any(Traceability.class),
+                anyString()
+        )).thenReturn(Mono.error(exception));
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
+                .verify();
+    }
+
+    @Test
+    void shouldPropagateErrorWhenDomainValidationFails() {
+
+        RuntimeException exception = new RuntimeException("Los datos del pedido no son válidos");
+
+        doThrow(exception)
+                .when(orderDomainValidator)
+                .validateForCreate(
+                        any(CreateOrderCommand.class)
+                );
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error ->
+                        assertSame(exception, error)
+                )
+                .verify();
+    }
+
+    @Test
+    void shouldCreateOrderWithMultipleDishesSuccessfully() {
+
+        CreateOrderItemCommand secondItem =
+                new CreateOrderItemCommand(
+                        20L,
+                        BigDecimal.valueOf(1)
+                );
+
+        CreateOrderCommand command =
+                new CreateOrderCommand(
+                        1L,
+                        List.of(
+                                itemCommand,
+                                secondItem
+                        )
+                );
+
+        Dish secondDish = Dish.builder()
+                .id(20L)
+                .name("Pizza")
+                .description("Pizza familiar")
+                .price(BigDecimal.valueOf(30000))
+                .category("PIZZA")
+                .status(true)
+                .restaurantId(1L)
+                .build();
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish, secondDish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.just(order));
+
+        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
+                .thenReturn(Flux.just(orderDetail));
+
+        when(iTraceabilityWebClientPort.create(
+                any(Traceability.class),
+                anyString()
+        )).thenReturn(Mono.empty());
+
+        StepVerifier.create(createOrderUseCase.create(command, token))
+                .assertNext(result -> {
+
+                    assertNotNull(result);
+
+                    assertEquals(100L, result.id());
+
+                    assertEquals(20L, result.customerId());
+
+                    assertEquals(1L, result.restaurantId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFailWhenOrderDetailsAreEmpty() {
+
+        when(orderRegistrationValidator.validate(
+                anyLong(),
+                any(),
+                anyString()
+        )).thenReturn(Mono.just(20L));
+
+        when(iDishPersistencePort.findByIds(anyList()))
+                .thenReturn(Flux.just(dish));
+
+        when(iOrderPersistencePort.save(any(Order.class)))
+                .thenReturn(Mono.just(order));
+
+        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
+                .thenReturn(Flux.empty());
+
+        StepVerifier.create(createOrderUseCase.create(createOrderCommand, token))
+                .expectErrorSatisfies(error -> {
+                    assertEquals(
+                            java.util.NoSuchElementException.class,
+                            error.getClass()
+                    );
+                })
+                .verify();
+    }
 }

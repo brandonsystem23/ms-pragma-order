@@ -1,7 +1,6 @@
 package com.pragma.order_service.domain.usecase;
 
 import com.pragma.order_service.domain.model.Dish;
-import com.pragma.order_service.domain.model.query.DishQueryModel;
 import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.api.IListDishesServicePort;
 import com.pragma.order_service.domain.spi.IDishPersistencePort;
@@ -19,7 +18,7 @@ public class ListDishesUseCase implements IListDishesServicePort {
     private final ListDishesDomainValidator listDishesDomainValidator;
 
     @Override
-    public Mono<PageResult<DishQueryModel>> listByRestaurant(Long restaurantId, String category, int page, int size,
+    public Mono<PageResult<Dish>> listByRestaurant(Long restaurantId, String category, int page, int size,
                                                              String token) {
         return Mono.defer(() -> {
 
@@ -33,12 +32,11 @@ public class ListDishesUseCase implements IListDishesServicePort {
                             )
                     ))
                     .map(tuple -> {
-                        var content = tuple.getT1();
+                        var listDish = tuple.getT1();
                         long totalElements = tuple.getT2();
                         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
-
-                        return PageResult.<DishQueryModel>builder()
-                                .content(content)
+                        return PageResult.<Dish>builder()
+                                .content(listDish)
                                 .page(page)
                                 .size(size)
                                 .totalElements(totalElements)
@@ -48,28 +46,15 @@ public class ListDishesUseCase implements IListDishesServicePort {
         });
     }
 
-    private Flux<DishQueryModel> getDishes(Long restaurantId, String category, int page, int size) {
-
-        Flux<Dish> dishes;
+    private Flux<Dish> getDishes(Long restaurantId, String category, int page, int size) {
 
         if (category == null || category.trim().isEmpty()) {
-            dishes = iDishPersistencePort.findActiveByRestaurantId(restaurantId, page, size);
-        } else {
-            dishes = iDishPersistencePort.findActiveByRestaurantIdAndCategory(restaurantId, category, page, size);
+            return iDishPersistencePort.findActiveByRestaurantId(restaurantId, page, size);
         }
 
-        return dishes.map(dish -> DishQueryModel.builder()
-                .id(dish.getId())
-                .name(dish.getName())
-                .price(dish.getPrice())
-                .description(dish.getDescription())
-                .urlImage(dish.getUrlImage())
-                .category(dish.getCategory())
-                .status(dish.getStatus())
-                .restaurantId(dish.getRestaurantId())
-                .createdAt(dish.getCreatedAt())
-                .updatedAt(dish.getUpdatedAt())
-                .build());
+        return iDishPersistencePort.findActiveByRestaurantIdAndCategory(restaurantId, category, page, size);
+
+
     }
 
     private Mono<Long> countDishes(Long restaurantId, String category) {

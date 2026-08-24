@@ -2,7 +2,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
 import com.pragma.order_service.application.dto.response.PagedResponse;
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.handler.IRestaurantHandler;
 import org.junit.jupiter.api.Assertions;
@@ -65,9 +65,9 @@ class RestaurantControllerTest {
 
     @Test
     void shouldListRestaurantsSuccessfully() {
-        PagedResponse<RestaurantListItemResponse> response = PagedResponse.<RestaurantListItemResponse>builder()
+        PagedResponse<RestaurantListResponse> response = PagedResponse.<RestaurantListResponse>builder()
                 .content(List.of(
-                        RestaurantListItemResponse.builder()
+                        RestaurantListResponse.builder()
                                 .name("Burger House")
                                 .urlLogo("https://logo.com/burger.png")
                                 .build()

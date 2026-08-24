@@ -7,7 +7,6 @@ import com.pragma.order_service.application.mapper.DishDtoMapper;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.CreateDishCommand;
 import com.pragma.order_service.domain.model.command.UpdateDishCommand;
-import com.pragma.order_service.domain.model.query.DishQueryModel;
 import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.api.ICreateDishServicePort;
 import com.pragma.order_service.domain.api.IListDishesServicePort;
@@ -201,9 +200,9 @@ class DishHandlerTest {
 
     @Test
     void shouldListDishesByRestaurantSuccessfully() {
-        PageResult<DishQueryModel> pageResult = PageResult.<DishQueryModel>builder()
+        PageResult<Dish> pageResult = PageResult.<Dish>builder()
                 .content(List.of(
-                        DishQueryModel.builder()
+                        Dish.builder()
                                 .id(1L)
                                 .name("Pizza Hawaiana")
                                 .price(BigDecimal.valueOf(25000))
@@ -238,7 +237,7 @@ class DishHandlerTest {
         when(listDishesUseCase.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
                 .thenReturn(Mono.just(pageResult));
 
-        when(dishDtoMapper.toResponse(any(DishQueryModel.class))).thenReturn(dishResponse);
+        when(dishDtoMapper.toResponse(any(Dish.class))).thenReturn(dishResponse);
 
         StepVerifier.create(dishApplicationService.listByRestaurant(1L, "PIZZA", 0, 10, "token-test"))
                 .assertNext(response -> {

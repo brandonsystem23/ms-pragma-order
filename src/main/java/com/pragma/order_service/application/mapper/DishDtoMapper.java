@@ -6,7 +6,6 @@ import com.pragma.order_service.application.dto.response.DishResponse;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.CreateDishCommand;
 import com.pragma.order_service.domain.model.command.UpdateDishCommand;
-import com.pragma.order_service.domain.model.query.DishQueryModel;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
@@ -18,5 +17,4 @@ public interface DishDtoMapper {
 
     DishResponse toResponse(Dish dish);
 
-    DishResponse toResponse(DishQueryModel entity);
 }

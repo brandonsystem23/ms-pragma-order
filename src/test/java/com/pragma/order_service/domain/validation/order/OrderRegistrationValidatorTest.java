@@ -123,45 +123,72 @@ class OrderRegistrationValidatorTest {
 
     @Test
     void shouldFailWhenCustomerHasActiveOrder() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iOrderPersistencePort.existsByCustomerIdAndRestaurantIdAndStatusIn(anyLong(), anyLong())).thenReturn(Mono.just(true));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
 
-        StepVerifier.create(orderRegistrationValidator.validate(
-                        1L,
-                        List.of(new CreateOrderItemCommand(10L, BigDecimal.valueOf(2))),
-                        "token-test"
-                ))
+        when(iRestaurantPersistencePort.existById(anyLong()))
+                .thenReturn(Mono.just(true));
+
+        when(iOrderPersistencePort.existsByCustomerIdAndRestaurantIdAndStatusIn(
+                anyLong(),
+                anyLong()
+        )).thenReturn(Mono.just(true));
+
+        StepVerifier.create(orderRegistrationValidator.validate(1L, List.of(
+                                        new CreateOrderItemCommand(
+                                                10L,
+                                                BigDecimal.valueOf(2)
+                                        )), "token-test")
+                )
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("El cliente ya tiene un pedido en proceso para este restaurante", error.getMessage());
+                    Assertions.assertEquals("El cliente ya tiene un pedido en proceso para este restaurante",
+                            error.getMessage());
                 })
                 .verify();
     }
 
     @Test
     void shouldFailWhenRestaurantDoesNotExist() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(20L)
                 .role("CLIENTE")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iOrderPersistencePort.existsByCustomerIdAndRestaurantIdAndStatusIn(anyLong(), anyLong())).thenReturn(Mono.just(false));
-        when(iRestaurantPersistencePort.existById(anyLong())).thenReturn(Mono.just(false));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
 
-        StepVerifier.create(orderRegistrationValidator.validate(
-                        1L,
-                        List.of(new CreateOrderItemCommand(10L, BigDecimal.valueOf(2))),
-                        "token-test"
-                ))
+        when(iRestaurantPersistencePort.existById(anyLong()))
+                .thenReturn(Mono.just(false));
+
+        StepVerifier.create(
+                        orderRegistrationValidator.validate(
+                                1L,
+                                List.of(
+                                        new CreateOrderItemCommand(
+                                                10L,
+                                                BigDecimal.valueOf(2)
+                                        )
+                                ),
+                                "token-test"
+                        )
+                )
                 .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("El restaurante no existe", error.getMessage());
+                    Assertions.assertInstanceOf(
+                            DomainException.class,
+                            error
+                    );
+                    Assertions.assertEquals(
+                            "El restaurante no existe",
+                            error.getMessage()
+                    );
                 })
                 .verify();
     }

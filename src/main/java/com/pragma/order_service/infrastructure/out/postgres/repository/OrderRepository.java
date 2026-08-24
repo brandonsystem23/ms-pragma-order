@@ -28,6 +28,7 @@ public interface OrderRepository extends ReactiveCrudRepository<OrderEntity, Lon
             CONCAT(u.first_name, ' ', u.last_name) AS customer_name,
             o.restaurant_id AS restaurant_id,
             r.name AS restaurant_name,
+            r.owner_id AS owner_id,
             o.status AS status,
             o.employee_assigned_id AS employee_assigned_id,
             o.total_price AS total_price,
