@@ -1,7 +1,7 @@
 package com.pragma.order_service.application.mapper;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
@@ -15,5 +15,5 @@ public interface RestaurantDtoMapper {
 
     RestaurantResponse toResponse(Restaurant restaurant);
 
-    RestaurantListItemResponse toResponse(RestaurantListItem restaurantListItem);
+    RestaurantListResponse toResponse(RestaurantListItem restaurantListItem);
 }

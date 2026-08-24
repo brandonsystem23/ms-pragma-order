@@ -69,7 +69,7 @@ public class TraceabilityWebClientAdapter implements ITraceabilityWebClientPort 
             Map<String, String> mapHeaders,
             Traceability traceability) {
 
-        log.info("Enviando trazabilidad para orderId={}", traceability.orderId());
+        log.info("Enviando trazabilidad para orderId={} con estado {}", traceability.orderId(), traceability.status());
 
         return webClient.post()
                 .uri(path)

@@ -28,8 +28,9 @@ public class OrderRegistrationValidator {
     public Mono<Long> validate(Long restaurantId, List<CreateOrderItemCommand> items, String token) {
         return validateClientRole(token)
                 .flatMap(authSession ->
-                        validateCustomerWithoutActiveOrder(authSession.userId(), restaurantId)
-                                .then(Mono.defer(() -> validateRestaurantExists(restaurantId)))
+                                validateRestaurantExists(restaurantId)
+                                .then(Mono.defer(() -> validateCustomerWithoutActiveOrder(authSession.userId(),
+                                        restaurantId)))
                                 .then(Mono.defer(() -> validateDishes(items, restaurantId)))
                                 .thenReturn(authSession.userId())
                 );
@@ -41,14 +42,6 @@ public class OrderRegistrationValidator {
                         DomainErrorCode.INVALID_TOKEN,
                         DomainErrorMessages.INVALID_TOKEN
                 )))
-                .map(authSessionRedisValue -> AuthSession.builder()
-                        .userId(authSessionRedisValue.userId())
-                        .fullName(authSessionRedisValue.fullName())
-                        .role(authSessionRedisValue.role())
-                        .numberDocument(authSessionRedisValue.numberDocument())
-                        .phone(authSessionRedisValue.phone())
-                        .email(authSessionRedisValue.email())
-                        .build())
                 .flatMap(this::checkClientRole);
     }
 

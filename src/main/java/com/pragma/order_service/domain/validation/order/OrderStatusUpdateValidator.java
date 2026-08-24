@@ -23,15 +23,7 @@ public class OrderStatusUpdateValidator {
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.INVALID_TOKEN,
                         DomainErrorMessages.INVALID_TOKEN
-                )))
-                .map(authSessionRedisValue -> AuthSession.builder()
-                        .userId(authSessionRedisValue.userId())
-                        .fullName(authSessionRedisValue.fullName())
-                        .role(authSessionRedisValue.role())
-                        .numberDocument(authSessionRedisValue.numberDocument())
-                        .phone(authSessionRedisValue.phone())
-                        .email(authSessionRedisValue.email())
-                        .build());
+                )));
     }
 
     public Mono<Void> validateAssignOrder(Order order, AuthSession session) {
@@ -106,7 +98,7 @@ public class OrderStatusUpdateValidator {
     }
 
     public Mono<Void> validateCancel(Order order, AuthSession session) {
-        return validateClientRole(session, DomainErrorMessages.ORDER_CANCEL_ACCESS_DENIED)
+        return validateClientRole(session)
                 .then(Mono.defer(() -> {
                     if (!session.userId().equals(order.getCustomerId())) {
                         return Mono.error(new DomainException(
@@ -145,11 +137,11 @@ public class OrderStatusUpdateValidator {
         return Mono.empty();
     }
 
-    private Mono<Void> validateClientRole(AuthSession session, String message) {
+    private Mono<Void> validateClientRole(AuthSession session) {
         if (!RoleNames.CLIENT.equals(session.role())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
-                    message
+                    DomainErrorMessages.ORDER_CANCEL_ACCESS_DENIED
             ));
         }
 

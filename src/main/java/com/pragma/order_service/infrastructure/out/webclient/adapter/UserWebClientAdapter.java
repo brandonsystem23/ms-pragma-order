@@ -67,7 +67,7 @@ public class UserWebClientAdapter implements IUserWebClientPort {
                                                          Map<String, String> mapHeaders,
                                                          Long userId) {
 
-        log.info("Consultando usuario con id: {}", userId);
+        log.info("Consultando usuario con ID={}", userId);
 
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder

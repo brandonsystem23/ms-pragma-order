@@ -3,9 +3,8 @@ package com.pragma.order_service.application.dto.response;
 import lombok.Builder;
 
 @Builder
-public record RestaurantListItemResponse(
+public record UpdateOrderResponse(
         Long id,
-        String name,
-        String urlLogo
+        String message
 ) {
 }

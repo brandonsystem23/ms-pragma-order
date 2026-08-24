@@ -1,5 +1,6 @@
 package com.pragma.order_service.domain.usecase;
 
+import com.pragma.order_service.domain.builder.DishBuilder;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.CreateDishCommand;
 import com.pragma.order_service.domain.api.ICreateDishServicePort;
@@ -29,21 +30,10 @@ public class CreateDishUseCase implements ICreateDishServicePort {
                     )
                     .then(Mono.defer(() ->
                          iDishPersistencePort.save(
-                                 buildToDish(createDishCommand)
+                                 DishBuilder.buildToDish(createDishCommand)
                          )
                     ));
         });
     }
 
-    private Dish buildToDish(CreateDishCommand createDishCommand) {
-        return Dish.builder()
-                .name(createDishCommand.name())
-                .price(createDishCommand.price())
-                .description(createDishCommand.description())
-                .urlImage(createDishCommand.urlImage())
-                .category(createDishCommand.category())
-                .status(true)
-                .restaurantId(createDishCommand.restaurantId())
-                .build();
-    }
 }

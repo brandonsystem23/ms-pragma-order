@@ -3,7 +3,7 @@ package com.pragma.order_service.infrastructure.input.rest;
 import com.pragma.order_service.application.dto.request.CreateOrderItemRequest;
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
-import com.pragma.order_service.application.dto.response.GenericResponse;
+import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.dto.response.OrderItemResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
@@ -90,7 +90,7 @@ class OrderControllerTest {
     void shouldUpdateOrderStatusSuccessfully() {
         UpdateOrderRequest request = new UpdateOrderRequest("ENTREGADO", "151370");
 
-        GenericResponse response = GenericResponse.builder()
+        UpdateOrderResponse response = UpdateOrderResponse.builder()
                 .id(100L)
                 .message("Estado del pedido actualizado exitosamente")
                 .build();

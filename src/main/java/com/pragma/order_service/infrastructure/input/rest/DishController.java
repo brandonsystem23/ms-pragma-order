@@ -9,6 +9,7 @@ import com.pragma.order_service.infrastructure.util.UtilTokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/dish")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Platos", description = "Endpoints para gestión de platos")
 public class DishController {
 
@@ -30,6 +32,9 @@ public class DishController {
             @RequestBody CreateDishRequest request
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud de creación de plato {}", request.name());
+
         return iDishHandler.create(request, token);
     }
 
@@ -42,6 +47,9 @@ public class DishController {
             @RequestBody UpdateDishRequest request
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para modificar precio o descripción de plato con ID={}", dishId);
+
         return iDishHandler.update(dishId, request, token);
     }
 
@@ -54,6 +62,9 @@ public class DishController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para modificar estado de plato con ID={}", dishId);
+
         return iDishHandler.updateStatus(dishId, status, token);
     }
 
@@ -68,6 +79,9 @@ public class DishController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader
     ) {
         String token = UtilTokenExtractor.extract(authorizationHeader);
+
+        log.info("Solicitud para listar platos del restaurante con ID={}", restaurantId);
+
         return iDishHandler.listByRestaurant(restaurantId, category, page, size, token);
     }
 }

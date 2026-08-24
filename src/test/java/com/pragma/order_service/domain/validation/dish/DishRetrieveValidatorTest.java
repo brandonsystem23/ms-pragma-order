@@ -45,8 +45,9 @@ class DishRetrieveValidatorTest {
 
     @Test
     void shouldFailWhenTokenIsInvalid() {
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.empty());
-        when(iRestaurantPersistencePort.existById(anyLong())).thenReturn(Mono.just(true));
+
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.empty());
 
         StepVerifier.create(dishRetrieveValidator.validate("bad-token", 1L))
                 .expectErrorSatisfies(error -> {
@@ -58,13 +59,14 @@ class DishRetrieveValidatorTest {
 
     @Test
     void shouldFailWhenRoleIsNotClient() {
+
         AuthSession authSession = AuthSession.builder()
                 .userId(10L)
                 .role("ADMINISTRADOR")
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iRestaurantPersistencePort.existById(anyLong())).thenReturn(Mono.just(true));
+        when(iRedisCachePort.findByToken(anyString()))
+                .thenReturn(Mono.just(authSession));
 
         StepVerifier.create(dishRetrieveValidator.validate("token-test", 1L))
                 .expectErrorSatisfies(error -> {

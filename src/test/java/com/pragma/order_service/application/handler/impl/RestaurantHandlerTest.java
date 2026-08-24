@@ -1,7 +1,7 @@
 package com.pragma.order_service.application.handler.impl;
 
 import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
-import com.pragma.order_service.application.dto.response.RestaurantListItemResponse;
+import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
 import com.pragma.order_service.domain.model.Restaurant;
@@ -117,7 +117,7 @@ class RestaurantHandlerTest {
                 .totalPages(1)
                 .build();
 
-        RestaurantListItemResponse restaurant = RestaurantListItemResponse.builder()
+        RestaurantListResponse restaurant = RestaurantListResponse.builder()
                 .id(1L)
                 .name("Burger House")
                 .urlLogo("https://example.com/logo.png")
