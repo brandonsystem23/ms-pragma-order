@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class CreateDishUseCase implements ICreateDishServicePort {
 
-    private final IDishPersistencePort dishPersistencePort;
+    private final IDishPersistencePort iDishPersistencePort;
     private final DishRegistrationValidator dishRegistrationValidator;
     private final DishDomainValidator dishDomainValidator;
 
@@ -28,7 +28,7 @@ public class CreateDishUseCase implements ICreateDishServicePort {
                             ownerId
                     )
                     .then(Mono.defer(() ->
-                            dishPersistencePort.save(
+                            iDishPersistencePort.save(
                                     DishBuilder.buildToDish(createDishCommand)
                             )
                     ));

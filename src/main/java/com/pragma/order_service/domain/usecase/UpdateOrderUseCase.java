@@ -27,10 +27,10 @@ import java.util.Comparator;
 @RequiredArgsConstructor
 public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
-    private final IOrderPersistencePort orderPersistencePort;
-    private final IUserWebClientPort userWebClientPort;
-    private final INotificationWebClientPort notificationWebClientPort;
-    private final ITraceabilityWebClientPort traceabilityWebClientPort;
+    private final IOrderPersistencePort iOrderPersistencePort;
+    private final IUserWebClientPort iUserWebClientPort;
+    private final INotificationWebClientPort iNotificationWebClientPort;
+    private final ITraceabilityWebClientPort iTraceabilityWebClientPort;
     private final UpdateOrderDomainValidator updateOrderStatusDomainValidator;
     private final OrderStatusUpdateValidator orderStatusUpdateValidator;
     private final OrderPinValidator orderPinValidator;
@@ -89,9 +89,9 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
     private Mono<Long> markOrderReady(Order order, Long userId, String role, String fullName, String token) {
         return orderStatusUpdateValidator.validateEmployeeCanMarkOrderReady(userId, role, order)
-                .then(Mono.defer(() -> userWebClientPort.findById(order.getCustomerId(), token)
+                .then(Mono.defer(() -> iUserWebClientPort.findById(order.getCustomerId(), token)
                         .map(UserSummary::phone)
-                        .flatMap(phone -> notificationWebClientPort.sendReadyNotification(phone, token))
+                        .flatMap(phone -> iNotificationWebClientPort.sendReadyNotification(phone, token))
                         .then(Mono.defer(() -> {
                             order.setStatus(OrderStatus.READY);
                             return saveAndTrace(order, userId, role, fullName, "Pedido listo para entregar", token);
@@ -117,7 +117,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
     }
 
     private Mono<Order> findOrderByIdOrFail(Long orderId) {
-        return orderPersistencePort.findById(orderId)
+        return iOrderPersistencePort.findById(orderId)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.ORDER_NOT_FOUND,
                         DomainErrorMessages.ORDER_NOT_FOUND
@@ -126,7 +126,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
     private Mono<Long> saveAndTrace(Order order, Long userId, String role, String fullName,
                                     String description, String token) {
-        return orderPersistencePort.save(order)
+        return iOrderPersistencePort.save(order)
                 .flatMap(savedOrder ->
                         buildAndSendTraceability(savedOrder, userId, role, fullName, description, token)
                                 .thenReturn(savedOrder.getId())
@@ -135,7 +135,7 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
     private Mono<Void> buildAndSendTraceability(Order order, Long userId, String role, String fullName,
                                                 String description, String token) {
-        return orderPersistencePort.findOrderDetailById(order.getId())
+        return iOrderPersistencePort.findOrderDetailById(order.getId())
                 .collectList()
                 .flatMap(orderDetails -> {
                     OrderDetail latestDetail = orderDetails.stream()
@@ -165,6 +165,6 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
                 description
         );
 
-        return traceabilityWebClientPort.create(traceability, token).then();
+        return iTraceabilityWebClientPort.create(traceability, token).then();
     }
 }

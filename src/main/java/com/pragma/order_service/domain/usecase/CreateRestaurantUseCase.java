@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class CreateRestaurantUseCase implements ICreateRestaurantServicePort {
 
-    private final IRestaurantPersistencePort restaurantPersistencePort;
+    private final IRestaurantPersistencePort iRestaurantPersistencePort;
     private final RestaurantRegistrationValidator restaurantRegistrationValidator;
     private final RestaurantDomainValidator restaurantDomainValidator;
 
@@ -28,7 +28,7 @@ public class CreateRestaurantUseCase implements ICreateRestaurantServicePort {
                             createRestaurantCommand.ownerId(),
                             token
                     )
-                    .then(Mono.defer(() -> restaurantPersistencePort.save(
+                    .then(Mono.defer(() -> iRestaurantPersistencePort.save(
                             RestaurantBuilder.buildRestaurant(createRestaurantCommand))
                     ));
         });

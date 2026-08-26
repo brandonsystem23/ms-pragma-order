@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ListRestaurantsUseCase implements IListRestaurantsServicePort {
 
-    private final IRestaurantPersistencePort restaurantPersistencePort;
+    private final IRestaurantPersistencePort iRestaurantPersistencePort;
     private final ListRestaurantsDomainValidator listRestaurantsDomainValidator;
 
     @Override
@@ -21,10 +21,10 @@ public class ListRestaurantsUseCase implements IListRestaurantsServicePort {
             listRestaurantsDomainValidator.validate(page, size);
 
             return Mono.zip(
-                            restaurantPersistencePort.findActiveRestaurantsOrdered(page, size)
+                            iRestaurantPersistencePort.findActiveRestaurantsOrdered(page, size)
                                     .map(RestaurantBuilder::buildRestaurantListItem)
                                     .collectList(),
-                            restaurantPersistencePort.countActiveRestaurants()
+                            iRestaurantPersistencePort.countActiveRestaurants()
                     )
                     .map(tuple -> {
                         var listRestaurants = tuple.getT1();

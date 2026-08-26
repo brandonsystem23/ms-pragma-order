@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ListOrdersUseCase implements IListOrdersServicePort {
 
-    private final IOrderPersistencePort orderPersistencePort;
+    private final IOrderPersistencePort iOrderPersistencePort;
     private final OrderRetrieveValidator orderRetrieveValidator;
     private final ListOrdersDomainValidator listOrdersDomainValidator;
 
@@ -27,15 +27,15 @@ public class ListOrdersUseCase implements IListOrdersServicePort {
             return orderRetrieveValidator.validateEmployeeHasRestaurantAssigned(employeeId)
                     .flatMap(restaurantId ->
                             Mono.zip(
-                                    orderPersistencePort.countOrdersByRestaurantIdAndStatus(restaurantId, status),
-                                    orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(restaurantId, status, page, size)
+                                    iOrderPersistencePort.countOrdersByRestaurantIdAndStatus(restaurantId, status),
+                                    iOrderPersistencePort.findOrderIdsByRestaurantIdAndStatus(restaurantId, status, page, size)
                                             .collectList()
                                             .flatMap(orderIds -> {
                                                 if (orderIds.isEmpty()) {
                                                     return Mono.just(List.<OrderQueryModel>of());
                                                 }
 
-                                                return orderPersistencePort.findOrdersDetailByIds(orderIds)
+                                                return iOrderPersistencePort.findOrdersDetailByIds(orderIds)
                                                         .collectList()
                                                         .map(OrderBuilder::buildOrderResponses);
                                             })

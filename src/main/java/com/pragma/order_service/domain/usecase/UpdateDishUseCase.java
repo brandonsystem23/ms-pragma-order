@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UpdateDishUseCase implements IUpdateDishServicePort {
 
-    private final IDishPersistencePort dishPersistencePort;
+    private final IDishPersistencePort iDishPersistencePort;
     private final UpdateDishRegistrationValidator updateDishRegistrationValidator;
     private final UpdateDishDomainValidator updateDishDomainValidator;
 
@@ -32,7 +32,7 @@ public class UpdateDishUseCase implements IUpdateDishServicePort {
                             existingDish.setDescription(updateDishCommand.description());
                         }
 
-                        return dishPersistencePort.save(existingDish);
+                        return iDishPersistencePort.save(existingDish);
                     });
         });
     }
@@ -45,7 +45,7 @@ public class UpdateDishUseCase implements IUpdateDishServicePort {
             return updateDishRegistrationValidator.findDishAndValidateOwnership(dishId, ownerId)
                     .flatMap(existingDish -> {
                         existingDish.setStatus(status);
-                        return dishPersistencePort.save(existingDish);
+                        return iDishPersistencePort.save(existingDish);
                     });
         });
     }

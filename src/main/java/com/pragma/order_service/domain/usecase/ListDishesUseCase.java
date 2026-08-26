@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ListDishesUseCase implements IListDishesServicePort {
 
-    private final IDishPersistencePort dishPersistencePort;
+    private final IDishPersistencePort iDishPersistencePort;
     private final DishRetrieveValidator dishRetrieveValidator;
     private final ListDishesDomainValidator listDishesDomainValidator;
 
@@ -47,17 +47,17 @@ public class ListDishesUseCase implements IListDishesServicePort {
 
     private Flux<Dish> getDishes(Long restaurantId, String category, int page, int size) {
         if (category == null || category.trim().isEmpty()) {
-            return dishPersistencePort.findActiveByRestaurantId(restaurantId, page, size);
+            return iDishPersistencePort.findActiveByRestaurantId(restaurantId, page, size);
         }
 
-        return dishPersistencePort.findActiveByRestaurantIdAndCategory(restaurantId, category, page, size);
+        return iDishPersistencePort.findActiveByRestaurantIdAndCategory(restaurantId, category, page, size);
     }
 
     private Mono<Long> countDishes(Long restaurantId, String category) {
         if (category == null || category.trim().isEmpty()) {
-            return dishPersistencePort.countActiveByRestaurantId(restaurantId);
+            return iDishPersistencePort.countActiveByRestaurantId(restaurantId);
         }
 
-        return dishPersistencePort.countActiveByRestaurantIdAndCategory(restaurantId, category);
+        return iDishPersistencePort.countActiveByRestaurantIdAndCategory(restaurantId, category);
     }
 }

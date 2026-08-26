@@ -17,14 +17,14 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class DishHandler implements IDishHandler {
 
-    private final ICreateDishServicePort createDishServicePort;
-    private final IUpdateDishServicePort updateDishServicePort;
-    private final IListDishesServicePort listDishesServicePort;
+    private final ICreateDishServicePort iCreateDishServicePort;
+    private final IUpdateDishServicePort iUpdateDishServicePort;
+    private final IListDishesServicePort iListDishesServicePort;
     private final DishDtoMapper dishDtoMapper;
 
     @Override
     public Mono<DishResponse> create(CreateDishRequest request, Long ownerId) {
-        return createDishServicePort.create(
+        return iCreateDishServicePort.create(
                         dishDtoMapper.toCommand(request),
                         ownerId
                 )
@@ -33,7 +33,7 @@ public class DishHandler implements IDishHandler {
 
     @Override
     public Mono<DishResponse> update(Long dishId, UpdateDishRequest request, Long ownerId) {
-        return updateDishServicePort.update(
+        return iUpdateDishServicePort.update(
                         dishId,
                         dishDtoMapper.toUpdateCommand(request),
                         ownerId
@@ -43,7 +43,7 @@ public class DishHandler implements IDishHandler {
 
     @Override
     public Mono<DishResponse> updateStatus(Long dishId, Boolean status, Long ownerId) {
-        return updateDishServicePort.updateStatus(
+        return iUpdateDishServicePort.updateStatus(
                         dishId,
                         status,
                         ownerId
@@ -53,7 +53,7 @@ public class DishHandler implements IDishHandler {
 
     @Override
     public Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size) {
-        return listDishesServicePort.listByRestaurant(restaurantId, category, page, size)
+        return iListDishesServicePort.listByRestaurant(restaurantId, category, page, size)
                 .map(result -> PagedResponse.<DishResponse>builder()
                         .content(result.content().stream()
                                 .map(dishDtoMapper::toResponse)

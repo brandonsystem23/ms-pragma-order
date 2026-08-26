@@ -16,13 +16,13 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class RestaurantHandler implements IRestaurantHandler {
 
-    private final ICreateRestaurantServicePort createRestaurantServicePort;
-    private final IListRestaurantsServicePort listRestaurantsServicePort;
+    private final ICreateRestaurantServicePort iCreateRestaurantServicePort;
+    private final IListRestaurantsServicePort iListRestaurantsServicePort;
     private final RestaurantDtoMapper restaurantDtoMapper;
 
     @Override
     public Mono<RestaurantResponse> create(CreateRestaurantRequest request, String token) {
-        return createRestaurantServicePort.create(
+        return iCreateRestaurantServicePort.create(
                         restaurantDtoMapper.toCommand(request),
                         token
                 )
@@ -31,7 +31,7 @@ public class RestaurantHandler implements IRestaurantHandler {
 
     @Override
     public Mono<PagedResponse<RestaurantListResponse>> list(int page, int size) {
-        return listRestaurantsServicePort.list(page, size)
+        return iListRestaurantsServicePort.list(page, size)
                 .map(result -> PagedResponse.<RestaurantListResponse>builder()
                         .content(result.content().stream()
                                 .map(restaurantDtoMapper::toResponse)

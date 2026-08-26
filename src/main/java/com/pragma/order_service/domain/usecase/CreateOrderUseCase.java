@@ -22,9 +22,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CreateOrderUseCase implements ICreateOrderServicePort {
 
-    private final IOrderPersistencePort orderPersistencePort;
-    private final IDishPersistencePort dishPersistencePort;
-    private final ITraceabilityWebClientPort traceabilityWebClientPort;
+    private final IOrderPersistencePort iOrderPersistencePort;
+    private final IDishPersistencePort iDishPersistencePort;
+    private final ITraceabilityWebClientPort iTraceabilityWebClientPort;
     private final OrderRegistrationValidator orderRegistrationValidator;
     private final OrderDomainValidator orderDomainValidator;
 
@@ -39,9 +39,9 @@ public class CreateOrderUseCase implements ICreateOrderServicePort {
                             customerId
                     )
                     .then(Mono.defer(() -> buildOrder(customerId, createOrderCommand)))
-                    .flatMap(orderPersistencePort::save)
+                    .flatMap(iOrderPersistencePort::save)
                     .flatMap(savedOrder ->
-                            orderPersistencePort.findOrderDetailById(savedOrder.getId())
+                            iOrderPersistencePort.findOrderDetailById(savedOrder.getId())
                                     .collectList()
                                     .flatMap(orderDetails ->
                                             sendTraceability(orderDetails, token)
@@ -56,7 +56,7 @@ public class CreateOrderUseCase implements ICreateOrderServicePort {
                 .map(CreateOrderItemCommand::dishId)
                 .toList();
 
-        return dishPersistencePort.findByIds(dishIds)
+        return iDishPersistencePort.findByIds(dishIds)
                 .collectList()
                 .map(dishes -> OrderBuilder.buildOrder(createOrderCommand, dishes, customerId));
     }
@@ -73,6 +73,6 @@ public class CreateOrderUseCase implements ICreateOrderServicePort {
                 "Pedido creado"
         );
 
-        return traceabilityWebClientPort.create(traceability, token).then();
+        return iTraceabilityWebClientPort.create(traceability, token).then();
     }
 }
