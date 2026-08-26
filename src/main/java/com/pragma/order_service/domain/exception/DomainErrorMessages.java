@@ -35,12 +35,6 @@ public final class DomainErrorMessages {
     public static final String RESTAURANT_ID_REQUIRED = "El campo restaurantId es obligatorio";
     public static final String RESTAURANT_NOT_FOUND = "El restaurante no existe";
     public static final String INVALID_RESTAURANT = "Usted no es propietario del restaurante";
-    public static final String DISH_ACCESS_DENIED = "No tienes permisos para crear platos";
-    public static final String DISH_LIST_ACCESS_DENIED = "No tienes permisos para listar platos";
-
-    public static final String INVALID_TOKEN = "Token inválido o expirado";
-    public static final String RESTAURANT_ACCESS_DENIED = "No tienes permisos para crear restaurantes";
-    public static final String RESTAURANT_LIST_ACCESS_DENIED = "No tienes permisos para listar restaurantes";
 
     public static final String DISH_NOT_FOUND = "El plato no existe";
     public static final String DISH_ID_REQUIRED = "El campo dishId es obligatorio";
@@ -57,7 +51,6 @@ public final class DomainErrorMessages {
     public static final String ORDER_ITEM_INVALID = "Cada item del pedido debe ser válido";
     public static final String ORDER_ITEM_QUANTITY_REQUIRED = "La cantidad del plato es obligatoria";
     public static final String ORDER_ITEM_QUANTITY_INVALID = "La cantidad del plato debe ser un número entero positivo";
-    public static final String ORDER_CREATE_ACCESS_DENIED = "No tienes permisos para crear pedidos";
     public static final String ACTIVE_ORDER_EXISTS = "El cliente ya tiene un pedido en proceso para este restaurante";
     public static final String ORDER_DISH_INVALID_RESTAURANT = "Todos los platos del pedido deben pertenecer al restaurante indicado";
     public static final String ORDER_ASSIGN_ACCESS_DENIED = "No tienes permisos para asignarte pedidos";
@@ -76,8 +69,6 @@ public final class DomainErrorMessages {
     public static final String ORDER_CANCEL_NOT_CREATED = "No puedes cancelar un pedido de otro cliente";
     public static final String ORDER_CANCEL_INVALID_STATUS = "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse";
 
-
-    public static final String ORDER_LIST_ACCESS_DENIED = "No tienes permisos para listar pedidos";
     public static final String ORDER_STATUS_INVALID = "El parámetro status es obligatorio";
     public static final String ORDER_STATUS_NOT_FOUND = "El estado ingresado no existe";
     public static final String EMPLOYEE_RESTAURANT_NOT_FOUND = "El empleado no tiene un restaurante asignado";

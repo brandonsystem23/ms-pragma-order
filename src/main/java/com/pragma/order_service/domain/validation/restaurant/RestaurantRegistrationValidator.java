@@ -5,8 +5,6 @@ import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.UserSummary;
-import com.pragma.order_service.domain.model.auth.AuthSession;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import lombok.RequiredArgsConstructor;
@@ -16,70 +14,48 @@ import reactor.core.publisher.Mono;
 public class RestaurantRegistrationValidator {
 
     private final IRestaurantPersistencePort restaurantPersistencePort;
-    private final IRedisCachePort authSessionPort;
     private final IUserWebClientPort userWebClientPort;
 
-    public Mono<Void> validate(String nit, Long ownerId, String token) {
-        return validateAdminRole(token)
-                .then(validateNit(nit))
-                .then(validateOwner(ownerId, token));
+    public Mono<Void> validateRestaurantCreationRules(String nit, Long ownerId, String token) {
+        return validateNitDoesNotExist(nit)
+                .then(Mono.defer(() -> findOwnerByIdOrFail(ownerId, token)))
+                .flatMap(owner -> validateOwnerIsActive(owner)
+                        .then(Mono.defer(() -> validateOwnerHasOwnerRole(owner))));
     }
 
-    private Mono<Void> validateAdminRole(String token) {
-        return authSessionPort.findByToken(token)
-                .switchIfEmpty(Mono.error(new DomainException(
-                        DomainErrorCode.INVALID_TOKEN,
-                        DomainErrorMessages.INVALID_TOKEN
-                )))
-                .flatMap(this::checkAdminRole)
-                .then();
-    }
-
-    private Mono<Void> checkAdminRole(AuthSession authSession) {
-        if (!RoleNames.ADMIN.equals(authSession.role())) {
-            return Mono.error(new DomainException(
-                    DomainErrorCode.ACCESS_DENIED,
-                    DomainErrorMessages.RESTAURANT_ACCESS_DENIED
-            ));
-        }
-
-        return Mono.empty();
-    }
-
-    private Mono<Void> validateNit(String nit) {
+    public Mono<Void> validateNitDoesNotExist(String nit) {
         return restaurantPersistencePort.existsByNit(nit)
                 .flatMap(exists -> Boolean.TRUE.equals(exists)
                         ? Mono.error(new DomainException(
                         DomainErrorCode.DUPLICATE_NIT,
                         DomainErrorMessages.DUPLICATE_NIT
-                )) : Mono.empty());
+                ))
+                        : Mono.empty());
     }
 
-    private Mono<Void> validateOwner(Long ownerId, String token) {
+    public Mono<UserSummary> findOwnerByIdOrFail(Long ownerId, String token) {
         return userWebClientPort.findById(ownerId, token)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.OWNER_NOT_FOUND,
                         DomainErrorMessages.OWNER_NOT_FOUND
-                )))
-                .flatMap(this::checkOwnerRole)
-                .then();
+                )));
     }
 
-    private Mono<Void> checkOwnerRole(UserSummary userSummary) {
-        if (!Boolean.TRUE.equals(userSummary.status())) {
-            return Mono.error(new DomainException(
-                    DomainErrorCode.OWNER_NOT_FOUND,
-                    DomainErrorMessages.OWNER_NOT_FOUND
-            ));
-        }
+    public Mono<Void> validateOwnerIsActive(UserSummary owner) {
+        return Boolean.TRUE.equals(owner.status())
+                ? Mono.empty()
+                : Mono.error(new DomainException(
+                DomainErrorCode.OWNER_NOT_FOUND,
+                DomainErrorMessages.OWNER_NOT_FOUND
+        ));
+    }
 
-        if (!RoleNames.OWNER.equals(userSummary.roleName())) {
-            return Mono.error(new DomainException(
-                    DomainErrorCode.INVALID_OWNER_ROLE,
-                    DomainErrorMessages.INVALID_OWNER_ROLE
-            ));
-        }
-
-        return Mono.empty();
+    public Mono<Void> validateOwnerHasOwnerRole(UserSummary owner) {
+        return RoleNames.OWNER.equals(owner.roleName())
+                ? Mono.empty()
+                : Mono.error(new DomainException(
+                DomainErrorCode.INVALID_OWNER_ROLE,
+                DomainErrorMessages.INVALID_OWNER_ROLE
+        ));
     }
 }

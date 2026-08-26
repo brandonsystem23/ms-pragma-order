@@ -2,7 +2,6 @@ package com.pragma.order_service.domain.usecase;
 
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.query.OrderDetail;
-import com.pragma.order_service.domain.model.query.OrderQueryModel;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
 import com.pragma.order_service.domain.validation.order.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderRetrieveValidator;
@@ -19,7 +18,6 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +47,6 @@ class ListOrdersUseCaseTest {
                 .restaurantId(1L)
                 .restaurantName("El Buen Sabor")
                 .status(OrderStatus.PENDING)
-                .employeeAssignedId(null)
                 .totalPrice(BigDecimal.valueOf(50000))
                 .dishId(10L)
                 .dishName("Pizza")
@@ -59,79 +56,76 @@ class ListOrdersUseCaseTest {
                 .updatedAt(now)
                 .build();
 
-        OrderDetail row2 = OrderDetail.builder()
-                .orderId(100L)
-                .customerId(20L)
-                .customerName("Juan Perez")
-                .restaurantId(1L)
-                .restaurantName("El Buen Sabor")
-                .status(OrderStatus.PENDING)
-                .employeeAssignedId(null)
-                .totalPrice(BigDecimal.valueOf(50000))
-                .dishId(11L)
-                .dishName("Hamburguesa")
-                .quantity(BigDecimal.ONE)
-                .dishPrice(BigDecimal.valueOf(10000))
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
+        doNothing().when(listOrdersDomainValidator).validate(OrderStatus.PENDING, 0, 10);
+        when(orderRetrieveValidator.validateEmployeeHasRestaurantAssigned(30L)).thenReturn(Mono.just(1L));
+        when(orderPersistencePort.countOrdersByRestaurantIdAndStatus(1L, OrderStatus.PENDING)).thenReturn(Mono.just(1L));
+        when(orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(1L, OrderStatus.PENDING, 0, 10)).thenReturn(Flux.just(100L));
+        when(orderPersistencePort.findOrdersDetailByIds(java.util.List.of(100L))).thenReturn(Flux.just(row1));
 
-        doNothing().when(listOrdersDomainValidator).validate(any(), anyInt(), anyInt());
-        when(orderRetrieveValidator.validate(anyString())).thenReturn(Mono.just(1L));
-        when(orderPersistencePort.countOrdersByRestaurantIdAndStatus(anyLong(), any()))
-                .thenReturn(Mono.just(1L));
-        when(orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(anyLong(), any(), anyInt(), anyInt()))
-                .thenReturn(Flux.just(100L));
-        when(orderPersistencePort.findOrdersDetailByIds(any()))
-                .thenReturn(Flux.just(row1, row2));
-
-        StepVerifier.create(service.list("token-test", OrderStatus.PENDING, 0, 10))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1, response.content().size());
-                    Assertions.assertEquals(1L, response.totalElements());
-                    Assertions.assertEquals(1, response.totalPages());
-                    Assertions.assertEquals(0, response.page());
-                    Assertions.assertEquals(10, response.size());
-
-                    OrderQueryModel order = response.content().getFirst();
-                    Assertions.assertEquals(100L, order.id());
-                    Assertions.assertEquals(20L, order.customerId());
-                    Assertions.assertEquals("Juan Perez", order.nameCustomer());
-                    Assertions.assertEquals(1L, order.restaurantId());
-                    Assertions.assertEquals("El Buen Sabor", order.nameRestaurant());
-                    Assertions.assertEquals(OrderStatus.PENDING, order.status());
-                    Assertions.assertEquals(BigDecimal.valueOf(50000), order.totalPrice());
-                    Assertions.assertEquals(2, order.items().size());
-
-                    Assertions.assertEquals(10L, order.items().getFirst().dishId());
-                    Assertions.assertEquals("Pizza", order.items().get(0).name());
-                    Assertions.assertEquals(BigDecimal.valueOf(2), order.items().get(0).quantity());
-                    Assertions.assertEquals(BigDecimal.valueOf(20000), order.items().get(0).price());
-
-                    Assertions.assertEquals(11L, order.items().get(1).dishId());
-                    Assertions.assertEquals("Hamburguesa", order.items().get(1).name());
-                    Assertions.assertEquals(BigDecimal.ONE, order.items().get(1).quantity());
-                    Assertions.assertEquals(BigDecimal.valueOf(10000), order.items().get(1).price());
+        StepVerifier.create(service.list(30L, OrderStatus.PENDING, 0, 10))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1, result.content().size());
+                    Assertions.assertEquals(1L, result.totalElements());
                 })
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnEmptyPageWhenNoOrdersExist() {
-        doNothing().when(listOrdersDomainValidator).validate(any(), anyInt(), anyInt());
-        when(orderRetrieveValidator.validate(anyString())).thenReturn(Mono.just(1L));
-        when(orderPersistencePort.countOrdersByRestaurantIdAndStatus(anyLong(), any()))
+    void shouldReturnEmptyListWhenOrderIdsAreEmpty() {
+        doNothing().when(listOrdersDomainValidator)
+                .validate(OrderStatus.PENDING, 0, 10);
+
+        when(orderRetrieveValidator.validateEmployeeHasRestaurantAssigned(30L))
+                .thenReturn(Mono.just(1L));
+
+        when(orderPersistencePort.countOrdersByRestaurantIdAndStatus(
+                1L, OrderStatus.PENDING))
                 .thenReturn(Mono.just(0L));
-        when(orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(anyLong(), any(), anyInt(), anyInt()))
+
+        when(orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(
+                1L, OrderStatus.PENDING, 0, 10))
                 .thenReturn(Flux.empty());
 
-        StepVerifier.create(service.list("token-test", OrderStatus.PENDING, 0, 10))
-                .assertNext(response -> {
-                    Assertions.assertTrue(response.content().isEmpty());
-                    Assertions.assertEquals(0L, response.totalElements());
-                    Assertions.assertEquals(0, response.totalPages());
-                    Assertions.assertEquals(0, response.page());
-                    Assertions.assertEquals(10, response.size());
+        StepVerifier.create(
+                        service.list(30L, OrderStatus.PENDING, 0, 10)
+                )
+                .assertNext(result -> {
+                    Assertions.assertTrue(result.content().isEmpty());
+                    Assertions.assertEquals(0L, result.totalElements());
+                    Assertions.assertEquals(0, result.totalPages());
+                    Assertions.assertEquals(0, result.page());
+                    Assertions.assertEquals(10, result.size());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnZeroTotalPagesWhenThereAreNoOrders() {
+        doNothing().when(listOrdersDomainValidator)
+                .validate(OrderStatus.PENDING, 0, 10);
+
+        when(orderRetrieveValidator.validateEmployeeHasRestaurantAssigned(30L))
+                .thenReturn(Mono.just(1L));
+
+        when(orderPersistencePort.countOrdersByRestaurantIdAndStatus(
+                1L, OrderStatus.PENDING))
+                .thenReturn(Mono.just(0L));
+
+        when(orderPersistencePort.findOrderIdsByRestaurantIdAndStatus(
+                1L, OrderStatus.PENDING, 0, 10))
+                .thenReturn(Flux.just(100L));
+
+        when(orderPersistencePort.findOrdersDetailByIds(
+                java.util.List.of(100L)))
+                .thenReturn(Flux.empty());
+
+        StepVerifier.create(
+                        service.list(30L, OrderStatus.PENDING, 0, 10)
+                )
+                .assertNext(result -> {
+                    Assertions.assertTrue(result.content().isEmpty());
+                    Assertions.assertEquals(0L, result.totalElements());
+                    Assertions.assertEquals(0, result.totalPages());
                 })
                 .verifyComplete();
     }

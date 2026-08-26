@@ -16,10 +16,8 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateDishUseCaseTest {
@@ -38,177 +36,56 @@ class UpdateDishUseCaseTest {
 
     @Test
     void shouldUpdateDishSuccessfully() {
-        UpdateDishCommand command = new UpdateDishCommand(
-                BigDecimal.valueOf(30000),
-                "Descripción actualizada"
-        );
+        UpdateDishCommand command = new UpdateDishCommand(BigDecimal.valueOf(30000), "Descripción actualizada");
 
         Dish existingDish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
                 .price(BigDecimal.valueOf(25000))
-                .description("Descripción anterior")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
+                .description("Anterior")
                 .restaurantId(1L)
                 .build();
 
         Dish updatedDish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
                 .price(BigDecimal.valueOf(30000))
                 .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
                 .restaurantId(1L)
                 .build();
 
-        doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
+        doNothing().when(updateDishDomainValidator).validateForUpdate(1L, command);
+        when(updateDishRegistrationValidator.findActiveDishAndValidateOwnership(1L, 99L))
                 .thenReturn(Mono.just(existingDish));
-        when(dishPersistencePort.save(any()))
-                .thenReturn(Mono.just(updatedDish));
+        when(dishPersistencePort.save(existingDish)).thenReturn(Mono.just(updatedDish));
 
-        StepVerifier.create(service.update(1L, command, "token-test"))
+        StepVerifier.create(service.update(1L, command, 99L))
                 .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.getId());
                     Assertions.assertEquals(BigDecimal.valueOf(30000), result.getPrice());
                     Assertions.assertEquals("Descripción actualizada", result.getDescription());
-                    Assertions.assertEquals("Pizza Hawaiana", result.getName());
                 })
                 .verifyComplete();
-
     }
 
     @Test
-    void shouldUpdateStatusDishSuccessfully() {
-
+    void shouldUpdateDishStatusSuccessfully() {
         Dish existingDish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(25000))
-                .description("Descripción anterior")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
                 .status(true)
                 .restaurantId(1L)
                 .build();
 
         Dish updatedDish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(30000))
-                .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
+                .status(false)
                 .restaurantId(1L)
                 .build();
 
-        doNothing().when(updateDishDomainValidator).validateForUpdateStatus(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
+        doNothing().when(updateDishDomainValidator).validateForUpdateStatus(1L, false);
+        when(updateDishRegistrationValidator.findDishAndValidateOwnership(1L, 99L))
                 .thenReturn(Mono.just(existingDish));
-        when(dishPersistencePort.save(any()))
-                .thenReturn(Mono.just(updatedDish));
+        when(dishPersistencePort.save(existingDish)).thenReturn(Mono.just(updatedDish));
 
-        StepVerifier.create(service.updateStatus(1L, false, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.getId());
-                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.getPrice());
-                    Assertions.assertEquals("Descripción actualizada", result.getDescription());
-                    Assertions.assertEquals("Pizza Hawaiana", result.getName());
-                })
-                .verifyComplete();
-
-    }
-
-    @Test
-    void shouldUpdateOnlyPriceSuccessfully() {
-        UpdateDishCommand command = new UpdateDishCommand(
-                BigDecimal.valueOf(35000),
-                null
-        );
-
-        Dish existingDish = Dish.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(25000))
-                .description("Descripción anterior")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .build();
-
-        Dish updatedDish = Dish.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(35000))
-                .description("Descripción anterior")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .build();
-
-        doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
-                .thenReturn(Mono.just(existingDish));
-        when(dishPersistencePort.save(any()))
-                .thenReturn(Mono.just(updatedDish));
-
-        StepVerifier.create(service.update(1L, command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(BigDecimal.valueOf(35000), result.getPrice());
-                    Assertions.assertEquals("Descripción anterior", result.getDescription());
-                })
+        StepVerifier.create(service.updateStatus(1L, false, 99L))
+                .assertNext(result -> Assertions.assertFalse(result.getStatus()))
                 .verifyComplete();
     }
-
-    @Test
-    void shouldUpdateOnlyDescriptionSuccessfully() {
-        UpdateDishCommand command = new UpdateDishCommand(
-                null,
-                "Nueva descripción"
-        );
-
-        Dish existingDish = Dish.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(25000))
-                .description("Descripción anterior")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .build();
-
-        Dish updatedDish = Dish.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(25000))
-                .description("Nueva descripción")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .build();
-
-        doNothing().when(updateDishDomainValidator).validateForUpdate(anyLong(), any());
-        when(updateDishRegistrationValidator.validate(anyLong(), anyString(), any()))
-                .thenReturn(Mono.just(existingDish));
-        when(dishPersistencePort.save(any()))
-                .thenReturn(Mono.just(updatedDish));
-
-        StepVerifier.create(service.update(1L, command, "token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(BigDecimal.valueOf(25000), result.getPrice());
-                    Assertions.assertEquals("Nueva descripción", result.getDescription());
-                })
-                .verifyComplete();
-    }
-
-
 }

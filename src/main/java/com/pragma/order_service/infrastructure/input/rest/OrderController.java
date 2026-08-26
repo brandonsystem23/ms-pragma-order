@@ -2,10 +2,11 @@ package com.pragma.order_service.infrastructure.input.rest;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
-import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.handler.IOrderHandler;
+import com.pragma.order_service.infrastructure.security.jwt.AuthenticatedUser;
 import com.pragma.order_service.infrastructure.util.UtilTokenExtractor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -29,14 +31,20 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Crear pedido", description = "Crea un pedido para un cliente. Requiere rol CLIENTE")
     public Mono<OrderResponse> create(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody CreateOrderRequest request
     ) {
+        log.info("Solicitud para crear pedido en restaurante con ID={} por cliente ID={}",
+                request.restaurantId(), authenticatedUser.userId());
+
         String token = UtilTokenExtractor.extract(authorizationHeader);
 
-        log.info("Solicitud para crear pedido en restaurante con ID={}", request.restaurantId());
-
-        return iOrderHandler.create(request, token);
+        return iOrderHandler.create(
+                request,
+                authenticatedUser.userId(),
+                token
+        );
     }
 
     @PatchMapping("/{orderId}/status")
@@ -53,29 +61,43 @@ public class OrderController {
     )
     public Mono<UpdateOrderResponse> updateStatus(
             @PathVariable Long orderId,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
             @RequestBody UpdateOrderRequest request
     ) {
+        log.info("Solicitud para cambiar el estado de pedido con ID={} por usuario ID={} con rol={}",
+                orderId, authenticatedUser.userId(), authenticatedUser.role());
+
         String token = UtilTokenExtractor.extract(authorizationHeader);
 
-        log.info("Solicitud para cambiar el estado de pedido con ID={}", orderId);
-
-        return iOrderHandler.updateStatus(orderId, request, token);
+        return iOrderHandler.updateStatus(
+                orderId,
+                request,
+                authenticatedUser.userId(),
+                authenticatedUser.role(),
+                authenticatedUser.fullName(),
+                authenticatedUser.numberDocument(),
+                token
+        );
     }
 
     @GetMapping("/list")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Listar pedidos", description = "Lista pedidos del restaurante asociado al empleado. Requiere rol EMPLEADO")
     public Mono<PagedResponse<OrderResponse>> list(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @RequestParam(defaultValue = "PENDIENTE") String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        String token = UtilTokenExtractor.extract(authorizationHeader);
+        log.info("Solicitud para listar pedidos con estado {} por empleado ID={}",
+                status, authenticatedUser.userId());
 
-        log.info("Solicitud para listar pedidos con estado {}", status);
-
-        return iOrderHandler.list(token, status, page, size);
+        return iOrderHandler.list(
+                authenticatedUser.userId(),
+                status,
+                page,
+                size
+        );
     }
 }

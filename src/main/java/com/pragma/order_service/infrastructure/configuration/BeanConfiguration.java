@@ -8,25 +8,27 @@ import com.pragma.order_service.domain.api.IListOrdersServicePort;
 import com.pragma.order_service.domain.api.IListRestaurantsServicePort;
 import com.pragma.order_service.domain.api.IUpdateDishServicePort;
 import com.pragma.order_service.domain.api.IUpdateOrderServicePort;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IDishPersistencePort;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
+import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.spi.ITraceabilityWebClientPort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.usecase.CreateDishUseCase;
+import com.pragma.order_service.domain.usecase.CreateOrderUseCase;
+import com.pragma.order_service.domain.usecase.CreateRestaurantUseCase;
 import com.pragma.order_service.domain.usecase.ListDishesUseCase;
+import com.pragma.order_service.domain.usecase.ListOrdersUseCase;
+import com.pragma.order_service.domain.usecase.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.usecase.UpdateDishUseCase;
+import com.pragma.order_service.domain.usecase.UpdateOrderUseCase;
 import com.pragma.order_service.domain.validation.dish.DishDomainValidator;
 import com.pragma.order_service.domain.validation.dish.DishRegistrationValidator;
 import com.pragma.order_service.domain.validation.dish.DishRetrieveValidator;
 import com.pragma.order_service.domain.validation.dish.ListDishesDomainValidator;
 import com.pragma.order_service.domain.validation.dish.UpdateDishDomainValidator;
 import com.pragma.order_service.domain.validation.dish.UpdateDishRegistrationValidator;
-import com.pragma.order_service.domain.usecase.CreateOrderUseCase;
-import com.pragma.order_service.domain.usecase.ListOrdersUseCase;
-import com.pragma.order_service.domain.usecase.UpdateOrderUseCase;
 import com.pragma.order_service.domain.validation.order.ListOrdersDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderPinValidator;
@@ -34,12 +36,9 @@ import com.pragma.order_service.domain.validation.order.OrderRegistrationValidat
 import com.pragma.order_service.domain.validation.order.OrderRetrieveValidator;
 import com.pragma.order_service.domain.validation.order.OrderStatusUpdateValidator;
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
-import com.pragma.order_service.domain.usecase.CreateRestaurantUseCase;
-import com.pragma.order_service.domain.usecase.ListRestaurantsUseCase;
 import com.pragma.order_service.domain.validation.restaurant.ListRestaurantsDomainValidator;
 import com.pragma.order_service.domain.validation.restaurant.RestaurantDomainValidator;
 import com.pragma.order_service.domain.validation.restaurant.RestaurantRegistrationValidator;
-import com.pragma.order_service.domain.validation.restaurant.RestaurantRetrieveValidator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -53,47 +52,25 @@ public class BeanConfiguration {
 
     @Bean
     public RestaurantRegistrationValidator restaurantRegistrationValidator(
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            IRedisCachePort iRedisCachePort,
-            IUserWebClientPort iUserWebClientPort
+            IRestaurantPersistencePort restaurantPersistencePort,
+            IUserWebClientPort userWebClientPort
     ) {
         return new RestaurantRegistrationValidator(
-                iRestaurantPersistencePort,
-                iRedisCachePort,
-                iUserWebClientPort
+                restaurantPersistencePort,
+                userWebClientPort
         );
     }
 
     @Bean
     public ICreateRestaurantServicePort createRestaurantUseCase(
-            IRestaurantPersistencePort iRestaurantPersistencePort,
+            IRestaurantPersistencePort restaurantPersistencePort,
             RestaurantRegistrationValidator restaurantRegistrationValidator,
             RestaurantDomainValidator restaurantDomainValidator
     ) {
         return new CreateRestaurantUseCase(
-                iRestaurantPersistencePort,
+                restaurantPersistencePort,
                 restaurantRegistrationValidator,
                 restaurantDomainValidator
-        );
-    }
-
-    @Bean
-    public RestaurantRetrieveValidator restaurantRetrieveValidator(
-            IRedisCachePort iRedisCachePort
-    ) {
-        return new RestaurantRetrieveValidator(iRedisCachePort);
-    }
-
-    @Bean
-    public IListRestaurantsServicePort listRestaurantsUseCase(
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            RestaurantRetrieveValidator restaurantClientAccessValidator,
-            ListRestaurantsDomainValidator listRestaurantsDomainValidator
-    ) {
-        return new ListRestaurantsUseCase(
-                iRestaurantPersistencePort,
-                restaurantClientAccessValidator,
-                listRestaurantsDomainValidator
         );
     }
 
@@ -103,31 +80,40 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public IListRestaurantsServicePort listRestaurantsUseCase(
+            IRestaurantPersistencePort restaurantPersistencePort,
+            ListRestaurantsDomainValidator listRestaurantsDomainValidator
+    ) {
+        return new ListRestaurantsUseCase(
+                restaurantPersistencePort,
+                listRestaurantsDomainValidator
+        );
+    }
+
+    @Bean
     public DishDomainValidator dishDomainValidator() {
         return new DishDomainValidator();
     }
 
     @Bean
     public DishRegistrationValidator dishRegistrationValidator(
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            IDishPersistencePort iDishPersistencePort,
-            IRedisCachePort iRedisCachePort
+            IRestaurantPersistencePort restaurantPersistencePort,
+            IDishPersistencePort dishPersistencePort
     ) {
         return new DishRegistrationValidator(
-                iRestaurantPersistencePort,
-                iDishPersistencePort,
-                iRedisCachePort
+                restaurantPersistencePort,
+                dishPersistencePort
         );
     }
 
     @Bean
     public ICreateDishServicePort createDishUseCase(
-            IDishPersistencePort iDishPersistencePort,
+            IDishPersistencePort dishPersistencePort,
             DishRegistrationValidator dishRegistrationValidator,
             DishDomainValidator dishDomainValidator
     ) {
         return new CreateDishUseCase(
-                iDishPersistencePort,
+                dishPersistencePort,
                 dishRegistrationValidator,
                 dishDomainValidator
         );
@@ -140,36 +126,33 @@ public class BeanConfiguration {
 
     @Bean
     public UpdateDishRegistrationValidator updateDishRegistrationValidator(
-            IDishPersistencePort iDishPersistencePort,
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            IRedisCachePort iRedisCachePort
+            IDishPersistencePort dishPersistencePort,
+            IRestaurantPersistencePort restaurantPersistencePort
     ) {
         return new UpdateDishRegistrationValidator(
-                iDishPersistencePort,
-                iRestaurantPersistencePort,
-                iRedisCachePort
+                dishPersistencePort,
+                restaurantPersistencePort
         );
     }
 
     @Bean
     public IUpdateDishServicePort updateDishUseCase(
-            IDishPersistencePort iDishPersistencePort,
-            UpdateDishRegistrationValidator dishRegistrationValidator,
+            IDishPersistencePort dishPersistencePort,
+            UpdateDishRegistrationValidator updateDishRegistrationValidator,
             UpdateDishDomainValidator updateDishDomainValidator
     ) {
         return new UpdateDishUseCase(
-                iDishPersistencePort,
-                dishRegistrationValidator,
+                dishPersistencePort,
+                updateDishRegistrationValidator,
                 updateDishDomainValidator
         );
     }
 
     @Bean
     public DishRetrieveValidator dishRetrieveValidator(
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            IRedisCachePort iRedisCachePort
+            IRestaurantPersistencePort restaurantPersistencePort
     ) {
-        return new DishRetrieveValidator(iRestaurantPersistencePort, iRedisCachePort);
+        return new DishRetrieveValidator(restaurantPersistencePort);
     }
 
     @Bean
@@ -179,12 +162,12 @@ public class BeanConfiguration {
 
     @Bean
     public IListDishesServicePort listDishesUseCase(
-            IDishPersistencePort iDishPersistencePort,
+            IDishPersistencePort dishPersistencePort,
             DishRetrieveValidator dishRetrieveValidator,
             ListDishesDomainValidator listDishesDomainValidator
     ) {
         return new ListDishesUseCase(
-                iDishPersistencePort,
+                dishPersistencePort,
                 dishRetrieveValidator,
                 listDishesDomainValidator
         );
@@ -197,37 +180,33 @@ public class BeanConfiguration {
 
     @Bean
     public OrderRegistrationValidator orderRegistrationValidator(
-            IRedisCachePort iRedisCachePort,
-            IRestaurantPersistencePort iRestaurantPersistencePort,
-            IDishPersistencePort iDishPersistencePort,
-            IOrderPersistencePort iOrderPersistencePort
+            IRestaurantPersistencePort restaurantPersistencePort,
+            IDishPersistencePort dishPersistencePort,
+            IOrderPersistencePort orderPersistencePort
     ) {
         return new OrderRegistrationValidator(
-                iRedisCachePort,
-                iRestaurantPersistencePort,
-                iDishPersistencePort,
-                iOrderPersistencePort
+                restaurantPersistencePort,
+                dishPersistencePort,
+                orderPersistencePort
         );
     }
 
     @Bean
     public ICreateOrderServicePort createOrderUseCase(
-            IOrderPersistencePort iOrderPersistencePort,
-            IDishPersistencePort iDishPersistencePort,
-            ITraceabilityWebClientPort iTraceabilityWebClientPort,
+            IOrderPersistencePort orderPersistencePort,
+            IDishPersistencePort dishPersistencePort,
+            ITraceabilityWebClientPort traceabilityWebClientPort,
             OrderRegistrationValidator orderRegistrationValidator,
             OrderDomainValidator orderDomainValidator
     ) {
         return new CreateOrderUseCase(
-                iOrderPersistencePort,
-                iDishPersistencePort,
-                iTraceabilityWebClientPort,
+                orderPersistencePort,
+                dishPersistencePort,
+                traceabilityWebClientPort,
                 orderRegistrationValidator,
                 orderDomainValidator
         );
     }
-
-
 
     @Bean
     public ListOrdersDomainValidator listOrdersDomainValidator() {
@@ -236,20 +215,19 @@ public class BeanConfiguration {
 
     @Bean
     public OrderRetrieveValidator orderRetrieveValidator(
-            IRedisCachePort iRedisCachePort,
-            IRestaurantPersistencePort iRestaurantPersistencePort
+            IRestaurantPersistencePort restaurantPersistencePort
     ) {
-        return new OrderRetrieveValidator(iRedisCachePort, iRestaurantPersistencePort);
+        return new OrderRetrieveValidator(restaurantPersistencePort);
     }
 
     @Bean
     public IListOrdersServicePort listOrdersUseCase(
-            IOrderPersistencePort iOrderPersistencePort,
+            IOrderPersistencePort orderPersistencePort,
             OrderRetrieveValidator orderRetrieveValidator,
             ListOrdersDomainValidator listOrdersDomainValidator
     ) {
         return new ListOrdersUseCase(
-                iOrderPersistencePort,
+                orderPersistencePort,
                 orderRetrieveValidator,
                 listOrdersDomainValidator
         );
@@ -261,39 +239,35 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public OrderPinValidator orderPinValidator(IRedisCachePort iRedisCachePort) {
-        return new OrderPinValidator(iRedisCachePort);
+    public OrderPinValidator orderPinValidator(IRedisCachePort redisCachePort) {
+        return new OrderPinValidator(redisCachePort);
     }
 
+    @Bean
+    public OrderStatusUpdateValidator orderStatusUpdateValidator(
+            IRestaurantPersistencePort restaurantPersistencePort
+    ) {
+        return new OrderStatusUpdateValidator(restaurantPersistencePort);
+    }
 
     @Bean
     public IUpdateOrderServicePort updateOrderStatusUseCase(
-            IOrderPersistencePort iOrderPersistencePort,
-            IUserWebClientPort iUserWebClientPort,
-            INotificationWebClientPort iNotificationWebClientPort,
-            ITraceabilityWebClientPort iTraceabilityWebClientPort,
+            IOrderPersistencePort orderPersistencePort,
+            IUserWebClientPort userWebClientPort,
+            INotificationWebClientPort notificationWebClientPort,
+            ITraceabilityWebClientPort traceabilityWebClientPort,
             UpdateOrderDomainValidator updateOrderStatusDomainValidator,
             OrderStatusUpdateValidator orderStatusUpdateValidator,
             OrderPinValidator orderPinValidator
     ) {
         return new UpdateOrderUseCase(
-                iOrderPersistencePort,
-                iUserWebClientPort,
-                iNotificationWebClientPort,
-                iTraceabilityWebClientPort,
+                orderPersistencePort,
+                userWebClientPort,
+                notificationWebClientPort,
+                traceabilityWebClientPort,
                 updateOrderStatusDomainValidator,
                 orderStatusUpdateValidator,
                 orderPinValidator
         );
     }
-
-
-    @Bean
-    public OrderStatusUpdateValidator orderStatusUpdateValidator(
-            IRedisCachePort iRedisCachePort,
-            IRestaurantPersistencePort iRestaurantPersistencePort
-    ) {
-        return new OrderStatusUpdateValidator(iRedisCachePort, iRestaurantPersistencePort);
-    }
-
 }

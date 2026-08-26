@@ -2,9 +2,9 @@ package com.pragma.order_service.application.handler.impl;
 
 import com.pragma.order_service.application.dto.request.CreateOrderRequest;
 import com.pragma.order_service.application.dto.request.UpdateOrderRequest;
-import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.dto.response.OrderResponse;
 import com.pragma.order_service.application.dto.response.PagedResponse;
+import com.pragma.order_service.application.dto.response.UpdateOrderResponse;
 import com.pragma.order_service.application.handler.IOrderHandler;
 import com.pragma.order_service.application.mapper.OrderDtoMapper;
 import com.pragma.order_service.domain.api.ICreateOrderServicePort;
@@ -14,23 +14,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-
 @Service
 @RequiredArgsConstructor
 public class OrderHandler implements IOrderHandler {
 
     private static final String MESSAGE = "Estado del pedido actualizado exitosamente";
 
-    private final ICreateOrderServicePort iCreateOrderServicePort;
-    private final IListOrdersServicePort iListOrdersServicePort;
-    private final IUpdateOrderServicePort iUpdateOrderServicePort;
+    private final ICreateOrderServicePort createOrderServicePort;
+    private final IListOrdersServicePort listOrdersServicePort;
+    private final IUpdateOrderServicePort updateOrderServicePort;
     private final OrderDtoMapper orderDtoMapper;
 
     @Override
-    public Mono<UpdateOrderResponse> updateStatus(Long orderId, UpdateOrderRequest request, String token) {
-        return iUpdateOrderServicePort.update(
+    public Mono<UpdateOrderResponse> updateStatus(Long orderId, UpdateOrderRequest request, Long userId, String role,
+                                                  String fullName, String numberDocument, String token) {
+        return updateOrderServicePort.update(
                         orderId,
                         orderDtoMapper.toUpdateStatusCommand(request),
+                        userId,
+                        role,
+                        fullName,
+                        numberDocument,
                         token
                 )
                 .map(updatedOrderId -> UpdateOrderResponse.builder()
@@ -40,14 +44,14 @@ public class OrderHandler implements IOrderHandler {
     }
 
     @Override
-    public Mono<OrderResponse> create(CreateOrderRequest request, String token) {
-        return iCreateOrderServicePort.create(orderDtoMapper.toCommand(request), token)
+    public Mono<OrderResponse> create(CreateOrderRequest request, Long customerId, String token) {
+        return createOrderServicePort.create(orderDtoMapper.toCommand(request), customerId, token)
                 .map(orderDtoMapper::toResponse);
     }
 
     @Override
-    public Mono<PagedResponse<OrderResponse>> list(String token, String status, int page, int size) {
-        return iListOrdersServicePort.list(token, status, page, size)
+    public Mono<PagedResponse<OrderResponse>> list(Long employeeId, String status, int page, int size) {
+        return listOrdersServicePort.list(employeeId, status, page, size)
                 .map(result -> PagedResponse.<OrderResponse>builder()
                         .content(result.content().stream()
                                 .map(orderDtoMapper::toResponse)
@@ -58,5 +62,4 @@ public class OrderHandler implements IOrderHandler {
                         .totalPages(result.totalPages())
                         .build());
     }
-
 }

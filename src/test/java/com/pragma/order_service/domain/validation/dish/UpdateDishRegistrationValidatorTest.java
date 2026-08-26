@@ -2,8 +2,6 @@ package com.pragma.order_service.domain.validation.dish;
 
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Dish;
-import com.pragma.order_service.domain.model.auth.AuthSession;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IDishPersistencePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import org.junit.jupiter.api.Assertions;
@@ -17,45 +15,33 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateDishRegistrationValidatorTest {
 
     @Mock
-    private IDishPersistencePort iDishPersistencePort;
+    private IDishPersistencePort dishPersistencePort;
 
     @Mock
-    private IRestaurantPersistencePort iRestaurantPersistencePort;
-
-    @Mock
-    private IRedisCachePort iRedisCachePort;
+    private IRestaurantPersistencePort restaurantPersistencePort;
 
     @InjectMocks
     private UpdateDishRegistrationValidator updateDishRegistrationValidator;
 
     @Test
-    void shouldValidateSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
-                .userId(2L)
-                .role("PROPIETARIO")
-                .build();
-
+    void shouldFindActiveDishAndValidateOwnershipSuccessfully() {
         Dish dish = Dish.builder()
                 .id(1L)
-                .name("Pizza")
                 .price(BigDecimal.valueOf(25000))
-                .description("Original")
                 .restaurantId(10L)
+                .status(true)
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iDishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.just(dish));
-        when(iRestaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
+        when(dishPersistencePort.findByIdAndStatusTrue(1L)).thenReturn(Mono.just(dish));
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
 
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "token-test", null))
+        StepVerifier.create(updateDishRegistrationValidator.findActiveDishAndValidateOwnership(1L, 2L))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.getId());
                     Assertions.assertEquals(10L, result.getRestaurantId());
@@ -64,74 +50,10 @@ class UpdateDishRegistrationValidatorTest {
     }
 
     @Test
-    void shouldValidateStatusSuccessfully() {
-        AuthSession authSession = AuthSession.builder()
-                .userId(2L)
-                .role("PROPIETARIO")
-                .build();
+    void shouldFailFindActiveDishAndValidateOwnershipWhenDishDoesNotExist() {
+        when(dishPersistencePort.findByIdAndStatusTrue(1L)).thenReturn(Mono.empty());
 
-        Dish dish = Dish.builder()
-                .id(1L)
-                .name("Pizza")
-                .price(BigDecimal.valueOf(25000))
-                .description("Original")
-                .restaurantId(10L)
-                .status(false)
-                .build();
-
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iDishPersistencePort.findById(anyLong())).thenReturn(Mono.just(dish));
-        when(iRestaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
-
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "token-test", false))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.getId());
-                    Assertions.assertEquals(10L, result.getRestaurantId());
-                    Assertions.assertEquals(false, result.getStatus());
-                })
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldFailWhenTokenIsInvalid() {
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.empty());
-
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "bad-token", null))
-                .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("Token inválido o expirado", error.getMessage());
-                })
-                .verify();
-    }
-
-    @Test
-    void shouldFailWhenAuthenticatedUserIsNotOwner() {
-        AuthSession authSession = AuthSession.builder()
-                .userId(2L)
-                .role("ADMINISTRADOR")
-                .build();
-
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "token-test", null))
-                .expectErrorSatisfies(error -> {
-                    Assertions.assertInstanceOf(DomainException.class, error);
-                    Assertions.assertEquals("No tienes permisos para crear platos", error.getMessage());
-                })
-                .verify();
-    }
-
-    @Test
-    void shouldFailWhenDishDoesNotExist() {
-        AuthSession authSession = AuthSession.builder()
-                .userId(2L)
-                .role("PROPIETARIO")
-                .build();
-
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iDishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.empty());
-
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "token-test", null))
+        StepVerifier.create(updateDishRegistrationValidator.findActiveDishAndValidateOwnership(1L, 2L))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("El plato no existe", error.getMessage());
@@ -140,22 +62,141 @@ class UpdateDishRegistrationValidatorTest {
     }
 
     @Test
-    void shouldFailWhenUserIsNotOwnerOfRestaurant() {
-        AuthSession authSession = AuthSession.builder()
-                .userId(2L)
-                .role("PROPIETARIO")
-                .build();
-
+    void shouldFailFindActiveDishAndValidateOwnershipWhenOwnerIsInvalid() {
         Dish dish = Dish.builder()
                 .id(1L)
                 .restaurantId(10L)
+                .status(true)
                 .build();
 
-        when(iRedisCachePort.findByToken(anyString())).thenReturn(Mono.just(authSession));
-        when(iDishPersistencePort.findByIdAndStatusTrue(anyLong())).thenReturn(Mono.just(dish));
-        when(iRestaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(false));
+        when(dishPersistencePort.findByIdAndStatusTrue(1L)).thenReturn(Mono.just(dish));
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(false));
 
-        StepVerifier.create(updateDishRegistrationValidator.validate(1L, "token-test", null))
+        StepVerifier.create(updateDishRegistrationValidator.findActiveDishAndValidateOwnership(1L, 2L))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("Usted no es propietario del restaurante", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldFindDishAndValidateOwnershipSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .restaurantId(10L)
+                .status(false)
+                .build();
+
+        when(dishPersistencePort.findById(1L)).thenReturn(Mono.just(dish));
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
+
+        StepVerifier.create(updateDishRegistrationValidator.findDishAndValidateOwnership(1L, 2L))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.getId());
+                    Assertions.assertEquals(10L, result.getRestaurantId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFailFindDishAndValidateOwnershipWhenDishDoesNotExist() {
+        when(dishPersistencePort.findById(1L)).thenReturn(Mono.empty());
+
+        StepVerifier.create(updateDishRegistrationValidator.findDishAndValidateOwnership(1L, 2L))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El plato no existe", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldFailFindDishAndValidateOwnershipWhenOwnerIsInvalid() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .restaurantId(10L)
+                .status(false)
+                .build();
+
+        when(dishPersistencePort.findById(1L)).thenReturn(Mono.just(dish));
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(false));
+
+        StepVerifier.create(updateDishRegistrationValidator.findDishAndValidateOwnership(1L, 2L))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("Usted no es propietario del restaurante", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldFindActiveDishByIdOrFailSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .restaurantId(10L)
+                .status(true)
+                .build();
+
+        when(dishPersistencePort.findByIdAndStatusTrue(1L)).thenReturn(Mono.just(dish));
+
+        StepVerifier.create(updateDishRegistrationValidator.findActiveDishByIdOrFail(1L))
+                .assertNext(result -> Assertions.assertEquals(1L, result.getId()))
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFailWhenFindActiveDishByIdOrFailDoesNotFindDish() {
+        when(dishPersistencePort.findByIdAndStatusTrue(1L)).thenReturn(Mono.empty());
+
+        StepVerifier.create(updateDishRegistrationValidator.findActiveDishByIdOrFail(1L))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El plato no existe", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldFindDishByIdOrFailSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .restaurantId(10L)
+                .status(false)
+                .build();
+
+        when(dishPersistencePort.findById(1L)).thenReturn(Mono.just(dish));
+
+        StepVerifier.create(updateDishRegistrationValidator.findDishByIdOrFail(1L))
+                .assertNext(result -> Assertions.assertEquals(1L, result.getId()))
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFailWhenFindDishByIdOrFailDoesNotFindDish() {
+        when(dishPersistencePort.findById(1L)).thenReturn(Mono.empty());
+
+        StepVerifier.create(updateDishRegistrationValidator.findDishByIdOrFail(1L))
+                .expectErrorSatisfies(error -> {
+                    Assertions.assertInstanceOf(DomainException.class, error);
+                    Assertions.assertEquals("El plato no existe", error.getMessage());
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldValidateRestaurantOwnershipSuccessfully() {
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(true));
+
+        StepVerifier.create(updateDishRegistrationValidator.validateRestaurantOwnership(10L, 2L))
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFailWhenRestaurantOwnershipIsInvalid() {
+        when(restaurantPersistencePort.existByOwner(10L, 2L)).thenReturn(Mono.just(false));
+
+        StepVerifier.create(updateDishRegistrationValidator.validateRestaurantOwnership(10L, 2L))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
                     Assertions.assertEquals("Usted no es propietario del restaurante", error.getMessage());

@@ -3,7 +3,6 @@ package com.pragma.order_service.domain.usecase;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.validation.restaurant.ListRestaurantsDomainValidator;
-import com.pragma.order_service.domain.validation.restaurant.RestaurantRetrieveValidator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,8 +13,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -24,9 +21,6 @@ class ListRestaurantsUseCaseTest {
 
     @Mock
     private IRestaurantPersistencePort restaurantPersistencePort;
-
-    @Mock
-    private RestaurantRetrieveValidator restaurantRetrieveValidator;
 
     @Mock
     private ListRestaurantsDomainValidator listRestaurantsDomainValidator;
@@ -43,46 +37,36 @@ class ListRestaurantsUseCaseTest {
                 .status(true)
                 .build();
 
-        Restaurant restaurant2 = Restaurant.builder()
-                .id(2L)
-                .name("Pizza Place")
-                .urlLogo("https://logo.com/pizza.png")
-                .status(true)
-                .build();
+        doNothing().when(listRestaurantsDomainValidator).validate(0, 10);
+        when(restaurantPersistencePort.findActiveRestaurantsOrdered(0, 10)).thenReturn(Flux.just(restaurant1));
+        when(restaurantPersistencePort.countActiveRestaurants()).thenReturn(Mono.just(1L));
 
-        when(restaurantRetrieveValidator.validate(anyString())).thenReturn(Mono.empty());
-        doNothing().when(listRestaurantsDomainValidator).validate(anyInt(), anyInt());
-        when(restaurantPersistencePort.findActiveRestaurantsOrdered(anyInt(), anyInt()))
-                .thenReturn(Flux.just(restaurant1, restaurant2));
-        when(restaurantPersistencePort.countActiveRestaurants())
-                .thenReturn(Mono.just(2L));
-
-
-        StepVerifier.create(service.list("token-test", 0, 10))
-                .assertNext(response -> {
-                    Assertions.assertEquals(2, response.content().size());
-                    Assertions.assertEquals(0, response.page());
-                    Assertions.assertEquals(10, response.size());
-                    Assertions.assertEquals(2L, response.totalElements());
-                    Assertions.assertEquals(1, response.totalPages());
+        StepVerifier.create(service.list(0, 10))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1, result.content().size());
+                    Assertions.assertEquals(1L, result.totalElements());
                 })
                 .verifyComplete();
     }
 
     @Test
-    void shouldReturnEmptyPageWhenNoRestaurantsExist() {
-        doNothing().when(listRestaurantsDomainValidator).validate(anyInt(), anyInt());
-        when(restaurantRetrieveValidator.validate(anyString())).thenReturn(Mono.empty());
-        when(restaurantPersistencePort.findActiveRestaurantsOrdered(anyInt(), anyInt()))
+    void shouldReturnEmptyPageWhenThereAreNoRestaurants() {
+        doNothing().when(listRestaurantsDomainValidator)
+                .validate(0, 10);
+
+        when(restaurantPersistencePort.findActiveRestaurantsOrdered(0, 10))
                 .thenReturn(Flux.empty());
+
         when(restaurantPersistencePort.countActiveRestaurants())
                 .thenReturn(Mono.just(0L));
 
-        StepVerifier.create(service.list("token-test", 0, 10))
-                .assertNext(response -> {
-                    Assertions.assertTrue(response.content().isEmpty());
-                    Assertions.assertEquals(0L, response.totalElements());
-                    Assertions.assertEquals(0, response.totalPages());
+        StepVerifier.create(service.list(0, 10))
+                .assertNext(result -> {
+                    Assertions.assertTrue(result.content().isEmpty());
+                    Assertions.assertEquals(0L, result.totalElements());
+                    Assertions.assertEquals(0, result.totalPages());
+                    Assertions.assertEquals(0, result.page());
+                    Assertions.assertEquals(10, result.size());
                 })
                 .verifyComplete();
     }

@@ -1,18 +1,16 @@
 package com.pragma.order_service.domain.usecase;
 
 import com.pragma.order_service.domain.exception.DomainErrorCode;
+import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.TraceabilityRecord;
 import com.pragma.order_service.domain.model.UserSummary;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.UpdateOrderCommand;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
-import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import com.pragma.order_service.domain.spi.ITraceabilityWebClientPort;
 import com.pragma.order_service.domain.spi.IUserWebClientPort;
 import com.pragma.order_service.domain.validation.order.OrderPinValidator;
@@ -30,8 +28,7 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -39,502 +36,240 @@ import static org.mockito.Mockito.when;
 class UpdateOrderUseCaseTest {
 
     @Mock
-    private IOrderPersistencePort iOrderPersistencePort;
-
+    private IOrderPersistencePort orderPersistencePort;
     @Mock
-    private IRedisCachePort iRedisCachePort;
-
+    private IUserWebClientPort userWebClientPort;
     @Mock
-    private IRestaurantPersistencePort iRestaurantPersistencePort;
-
+    private INotificationWebClientPort notificationWebClientPort;
     @Mock
-    private IUserWebClientPort iUserWebClientPort;
-
+    private ITraceabilityWebClientPort traceabilityWebClientPort;
     @Mock
-    private INotificationWebClientPort iNotificationWebClientPort;
-
-    @Mock
-    private ITraceabilityWebClientPort iTraceabilityWebClientPort;
-
-    @Mock
-    private UpdateOrderDomainValidator updateOrderStatusDomainValidator;
-
+    private UpdateOrderDomainValidator updateOrderDomainValidator;
     @Mock
     private OrderStatusUpdateValidator orderStatusUpdateValidator;
-
     @Mock
     private OrderPinValidator orderPinValidator;
 
     @InjectMocks
     private UpdateOrderUseCase service;
 
-    private static final String TOKEN = "token-test";
-    private static final Long ORDER_ID = 100L;
-    private static final Long EMPLOYEE_ID = 30L;
-    private static final Long CUSTOMER_ID = 20L;
-    private static final Long RESTAURANT_ID = 5L;
-
     @Test
     void shouldAssignOrderSuccessfully() {
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand(OrderStatus.IN_PREPARATION, null);
-
-        AuthSession session = employeeSessionRedis();
+        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.IN_PREPARATION, null);
 
         Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
                 .status(OrderStatus.PENDING)
-                .employeeAssignedId(null)
                 .build();
 
         Order savedOrder = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
                 .status(OrderStatus.IN_PREPARATION)
-                .employeeAssignedId(EMPLOYEE_ID)
+                .employeeAssignedId(30L)
                 .build();
 
         OrderDetail orderDetail = OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .restaurantId(RESTAURANT_ID)
+                .orderId(100L)
+                .customerId(20L)
+                .restaurantId(5L)
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        TraceabilityRecord traceability = TraceabilityRecord.builder()
-                .id("trace-1")
-                .orderId(ORDER_ID)
-                .build();
+        doNothing().when(updateOrderDomainValidator).validate(100L, command);
+        when(orderPersistencePort.findById(100L)).thenReturn(Mono.just(order));
+        when(orderStatusUpdateValidator.validateEmployeeCanAssignOrder(30L, "EMPLEADO", order)).thenReturn(Mono.empty());
+        when(orderStatusUpdateValidator.findRestaurantIdByEmployeeOrFail(30L)).thenReturn(Mono.just(5L));
+        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
+        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(orderDetail));
+        when(traceabilityWebClientPort.create(any(), any())).thenReturn(Mono.just(
+                TraceabilityRecord.builder().id("trace-1").orderId(100L).build()
+        ));
 
-        doNothing()
-                .when(updateOrderStatusDomainValidator)
-                .validate(anyLong(), any());
-
-        when(orderStatusUpdateValidator.getSession(anyString()))
-                .thenReturn(Mono.just(session));
-
-        when(orderStatusUpdateValidator.validateAssignOrder(any(), any()))
-                .thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.findById(anyLong()))
-                .thenReturn(Mono.just(order));
-
-        when(iOrderPersistencePort.save(any()))
-                .thenReturn(Mono.just(savedOrder));
-
-        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
-                .thenReturn(Flux.just(orderDetail));
-
-        when(iTraceabilityWebClientPort.create(any(), anyString()))
-                .thenReturn(Mono.just(traceability));
-
-        StepVerifier.create(
-                        service.update(
-                                ORDER_ID,
-                                command,
-                                TOKEN
-                        )
-                )
-                .assertNext(result ->
-                        assertEquals(ORDER_ID, result)
-                )
+        StepVerifier.create(service.update(100L, command, 30L, "EMPLEADO", "Martin Lopez", "12345678", "token-test"))
+                .expectNext(100L)
                 .verifyComplete();
     }
 
     @Test
     void shouldMarkOrderReadySuccessfully() {
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand(OrderStatus.READY, null);
-
-        AuthSession session = employeeSessionRedis();
+        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.READY, null);
 
         Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
+                .employeeAssignedId(30L)
                 .status(OrderStatus.IN_PREPARATION)
-                .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
         Order savedOrder = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
                 .status(OrderStatus.READY)
-                .employeeAssignedId(EMPLOYEE_ID)
+                .restaurantId(5L)
+                .customerId(20L)
+                .employeeAssignedId(30L)
                 .build();
 
-        UserSummary customer = UserSummary.builder()
-                .id(CUSTOMER_ID)
-                .firstName("Juan")
-                .lastName("Perez")
-                .phone("+51900671048")
+        UserSummary userSummary = UserSummary.builder()
+                .id(20L)
+                .phone("+51999999999")
                 .build();
 
         OrderDetail orderDetail = OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .restaurantId(RESTAURANT_ID)
+                .orderId(100L)
+                .customerId(20L)
+                .restaurantId(5L)
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        doNothing()
-                .when(updateOrderStatusDomainValidator)
-                .validate(anyLong(), any());
+        doNothing().when(updateOrderDomainValidator).validate(100L, command);
+        when(orderPersistencePort.findById(100L)).thenReturn(Mono.just(order));
+        when(orderStatusUpdateValidator.validateEmployeeCanMarkOrderReady(30L, "EMPLEADO", order)).thenReturn(Mono.empty());
+        when(userWebClientPort.findById(20L, "token-test")).thenReturn(Mono.just(userSummary));
+        when(notificationWebClientPort.sendReadyNotification("+51999999999", "token-test"))
+                .thenReturn(Mono.just(com.pragma.order_service.domain.model.Notification.builder()
+                        .phoneNumber("+51999999999")
+                        .message("ok")
+                        .build()));
+        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
+        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(orderDetail));
+        when(traceabilityWebClientPort.create(any(), any())).thenReturn(Mono.just(
+                TraceabilityRecord.builder().id("trace-1").orderId(100L).build()
+        ));
 
-        when(orderStatusUpdateValidator.getSession(anyString()))
-                .thenReturn(Mono.just(session));
-
-        when(orderStatusUpdateValidator.validateMarkReady(any(), any()))
-                .thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.findById(anyLong()))
-                .thenReturn(Mono.just(order));
-
-        when(iUserWebClientPort.findById(
-                eq(CUSTOMER_ID),
-                anyString()
-        )).thenReturn(Mono.just(customer));
-
-        when(iNotificationWebClientPort.sendReadyNotification(
-                anyString(),
-                anyString()
-        )).thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.save(any()))
-                .thenReturn(Mono.just(savedOrder));
-
-        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
-                .thenReturn(Flux.just(orderDetail));
-
-        when(iTraceabilityWebClientPort.create(any(), anyString()))
-                .thenReturn(Mono.empty());
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result ->
-                        assertEquals(ORDER_ID, result)
-                )
+        StepVerifier.create(service.update(100L, command, 30L, "EMPLEADO", "Martin Lopez", "12345678", "token-test"))
+                .expectNext(100L)
                 .verifyComplete();
     }
 
     @Test
     void shouldDeliverOrderSuccessfully() {
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand(
-                        OrderStatus.DELIVERED,
-                        "151370"
-                );
-
-        AuthSession session = employeeSessionRedisWithDocument();
+        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.DELIVERED, "151370");
 
         Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
+                .employeeAssignedId(30L)
                 .status(OrderStatus.READY)
-                .employeeAssignedId(EMPLOYEE_ID)
                 .build();
 
         Order savedOrder = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
                 .status(OrderStatus.DELIVERED)
-                .employeeAssignedId(EMPLOYEE_ID)
+                .restaurantId(5L)
+                .customerId(20L)
+                .employeeAssignedId(30L)
                 .build();
 
         OrderDetail orderDetail = OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .restaurantId(RESTAURANT_ID)
+                .orderId(100L)
+                .customerId(20L)
+                .restaurantId(5L)
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        doNothing()
-                .when(updateOrderStatusDomainValidator)
-                .validate(anyLong(), any());
+        doNothing().when(updateOrderDomainValidator).validate(100L, command);
+        when(orderPersistencePort.findById(100L)).thenReturn(Mono.just(order));
+        when(orderStatusUpdateValidator.validateEmployeeCanDeliverOrder(30L, "EMPLEADO", order)).thenReturn(Mono.empty());
+        when(orderPinValidator.validateDeliveryPin("12345678", "151370")).thenReturn(Mono.empty());
+        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
+        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(orderDetail));
+        when(traceabilityWebClientPort.create(any(), any())).thenReturn(Mono.just(
+                TraceabilityRecord.builder().id("trace-1").orderId(100L).build()
+        ));
 
-        when(orderStatusUpdateValidator.getSession(anyString()))
-                .thenReturn(Mono.just(session));
-
-        when(orderStatusUpdateValidator.validateDeliver(any(), any()))
-                .thenReturn(Mono.empty());
-
-        when(orderPinValidator.validateDeliveryPin(any(), anyString()))
-                .thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.findById(anyLong()))
-                .thenReturn(Mono.just(order));
-
-        when(iOrderPersistencePort.save(any()))
-                .thenReturn(Mono.just(savedOrder));
-
-        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
-                .thenReturn(Flux.just(orderDetail));
-
-        when(iTraceabilityWebClientPort.create(any(), anyString()))
-                .thenReturn(Mono.empty());
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .assertNext(result ->
-                        assertEquals(ORDER_ID, result)
-                )
+        StepVerifier.create(service.update(100L, command, 30L, "EMPLEADO", "Martin Lopez", "12345678", "token-test"))
+                .expectNext(100L)
                 .verifyComplete();
     }
 
     @Test
     void shouldCancelOrderSuccessfully() {
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand(
-                        OrderStatus.CANCELLED,
-                        null
-                );
-
-        AuthSession session = clientSessionRedis();
+        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.CANCELLED, null);
 
         Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
                 .status(OrderStatus.PENDING)
                 .build();
 
         Order savedOrder = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
                 .status(OrderStatus.CANCELLED)
+                .restaurantId(5L)
+                .customerId(20L)
                 .build();
 
         OrderDetail orderDetail = OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .restaurantId(RESTAURANT_ID)
+                .orderId(100L)
+                .customerId(20L)
+                .restaurantId(5L)
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        doNothing().when(updateOrderDomainValidator).validate(100L, command);
+        when(orderPersistencePort.findById(100L)).thenReturn(Mono.just(order));
+        when(orderStatusUpdateValidator.validateClientCanCancelOrder(20L, "CLIENTE", order)).thenReturn(Mono.empty());
+        when(orderPersistencePort.save(any())).thenReturn(Mono.just(savedOrder));
+        when(orderPersistencePort.findOrderDetailById(100L)).thenReturn(Flux.just(orderDetail));
+        when(traceabilityWebClientPort.create(any(), any())).thenReturn(Mono.just(
+                TraceabilityRecord.builder().id("trace-1").orderId(100L).build()
+        ));
 
-        doNothing()
-                .when(updateOrderStatusDomainValidator)
-                .validate(anyLong(), any());
-
-        when(orderStatusUpdateValidator.getSession(anyString()))
-                .thenReturn(Mono.just(session));
-
-        when(orderStatusUpdateValidator.validateCancel(any(), any()))
-                .thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.findById(anyLong()))
-                .thenReturn(Mono.just(order));
-
-        when(iOrderPersistencePort.save(any()))
-                .thenReturn(Mono.just(savedOrder));
-
-        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
-                .thenReturn(Flux.just(orderDetail));
-
-        when(iTraceabilityWebClientPort.create(any(), anyString()))
-                .thenReturn(Mono.empty());
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN)
-                )
-                .assertNext(result ->
-                        assertEquals(ORDER_ID, result)
-                )
+        StepVerifier.create(service.update(100L, command, 20L, "CLIENTE", "Juan Perez", null, "token-test"))
+                .expectNext(100L)
                 .verifyComplete();
     }
 
     @Test
-    void shouldPropagateErrorWhenCreatingTraceabilityFails() {
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand(
-                        OrderStatus.CANCELLED,
-                        null
-                );
-
-        AuthSession session = clientSessionRedis();
+    void shouldFailWhenOrderStatusUpdateIsNotSupported() {
+        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.PENDING, null);
 
         Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
+                .id(100L)
+                .restaurantId(5L)
+                .customerId(20L)
                 .status(OrderStatus.PENDING)
                 .build();
 
-        Order savedOrder = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
-                .status(OrderStatus.CANCELLED)
-                .build();
+        doNothing().when(updateOrderDomainValidator)
+                .validate(100L, command);
 
-        OrderDetail orderDetail = OrderDetail.builder()
-                .orderId(ORDER_ID)
-                .customerId(CUSTOMER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        RuntimeException exception =
-                new RuntimeException("Error creando trazabilidad");
-
-        doNothing()
-                .when(updateOrderStatusDomainValidator)
-                .validate(anyLong(), any());
-
-        when(orderStatusUpdateValidator.getSession(anyString()))
-                .thenReturn(Mono.just(session));
-
-        when(orderStatusUpdateValidator.validateCancel(any(), any()))
-                .thenReturn(Mono.empty());
-
-        when(iOrderPersistencePort.findById(anyLong()))
+        when(orderPersistencePort.findById(100L))
                 .thenReturn(Mono.just(order));
 
-        when(iOrderPersistencePort.save(any()))
-                .thenReturn(Mono.just(savedOrder));
-
-        when(iOrderPersistencePort.findOrderDetailById(anyLong()))
-                .thenReturn(Flux.just(orderDetail));
-
-        when(iTraceabilityWebClientPort.create(any(), anyString()))
-                .thenReturn(Mono.error(exception));
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .expectErrorSatisfies(error ->
-                        assertEquals(exception, error)
+        StepVerifier.create(
+                        service.update(
+                                100L,
+                                command,
+                                30L,
+                                "EMPLEADO",
+                                "Martin Lopez",
+                                "12345678",
+                                "token-test"
+                        )
                 )
-                .verify();
-    }
-
-    @Test
-    void shouldFailDeliverWhenPinIsInvalid() {
-        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.DELIVERED, "151370");
-
-        AuthSession session = employeeSessionRedisWithDocument();
-        Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
-                .status(OrderStatus.READY)
-                .employeeAssignedId(EMPLOYEE_ID)
-                .build();
-
-        doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
-        when(orderStatusUpdateValidator.getSession(anyString())).thenReturn(Mono.just(session));
-        when(orderStatusUpdateValidator.validateDeliver(any(), any())).thenReturn(Mono.empty());
-        when(orderPinValidator.validateDeliveryPin(any(), anyString()))
-                .thenReturn(Mono.error(new DomainException(
-                        DomainErrorCode.INVALID_PIN,
-                        "El PIN de seguridad es inválido"
-                )));
-        when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .expectErrorSatisfies(error -> {
-                    DomainException ex = (DomainException) error;
-                    assertEquals(DomainErrorCode.INVALID_PIN, ex.getCode());
-                    assertEquals("El PIN de seguridad es inválido", ex.getMessage());
-                })
-                .verify();
-    }
-
-    @Test
-    void shouldFailWhenTokenIsInvalid() {
-        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.CANCELLED, null);
-
-        doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
-        when(orderStatusUpdateValidator.getSession(anyString())).thenReturn(Mono.error(
-                new DomainException(DomainErrorCode.INVALID_TOKEN, "Token inválido o expirado")
-        ));
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .expectErrorSatisfies(error -> {
-                    DomainException ex = (DomainException) error;
-                    assertEquals(DomainErrorCode.INVALID_TOKEN, ex.getCode());
-                })
-                .verify();
-    }
-
-    @Test
-    void shouldFailWhenOrderNotFound() {
-        UpdateOrderCommand command = new UpdateOrderCommand(OrderStatus.CANCELLED, null);
-
-        AuthSession session = clientSessionRedis();
-
-        doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
-        when(orderStatusUpdateValidator.getSession(anyString())).thenReturn(Mono.just(session));
-        when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.empty());
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
-                .expectErrorSatisfies(error -> {
-                    DomainException ex = (DomainException) error;
-                    assertEquals(DomainErrorCode.ORDER_NOT_FOUND, ex.getCode());
-                    assertEquals("El pedido no existe", ex.getMessage());
-                })
-                .verify();
-    }
-
-    @Test
-    void shouldFailWhenStatusIsNotSupportedInProcessStatusUpdate() {
-        UpdateOrderCommand command = new UpdateOrderCommand("OTRO_ESTADO", null);
-
-        AuthSession session = clientSessionRedis();
-        Order order = Order.builder()
-                .id(ORDER_ID)
-                .restaurantId(RESTAURANT_ID)
-                .customerId(CUSTOMER_ID)
-                .status(OrderStatus.PENDING)
-                .build();
-
-        doNothing().when(updateOrderStatusDomainValidator).validate(anyLong(), any());
-        when(orderStatusUpdateValidator.getSession(anyString())).thenReturn(Mono.just(session));
-        when(iOrderPersistencePort.findById(anyLong())).thenReturn(Mono.just(order));
-
-        StepVerifier.create(service.update(ORDER_ID, command, TOKEN))
                 .expectErrorSatisfies(error -> {
                     Assertions.assertInstanceOf(DomainException.class, error);
 
-                    DomainException ex = (DomainException) error;
-                    Assertions.assertEquals(DomainErrorCode.VALIDATION_ERROR, ex.getCode());
+                    DomainException domainException = (DomainException) error;
+
                     Assertions.assertEquals(
-                            "El estado solicitado no es soportado para actualización",
-                            ex.getMessage()
+                            DomainErrorCode.VALIDATION_ERROR,
+                            domainException.getCode()
+                    );
+
+                    Assertions.assertEquals(
+                            DomainErrorMessages.ORDER_STATUS_UPDATE_NOT_SUPPORTED,
+                            domainException.getMessage()
                     );
                 })
                 .verify();
-    }
-
-    private AuthSession employeeSessionRedis() {
-        return AuthSession.builder()
-                .userId(EMPLOYEE_ID)
-                .role("EMPLEADO")
-                .fullName("Martin Lopez")
-                .build();
-    }
-
-    private AuthSession employeeSessionRedisWithDocument() {
-        return AuthSession.builder()
-                .userId(EMPLOYEE_ID)
-                .role("EMPLEADO")
-                .numberDocument("12345678")
-                .fullName("Martin Lopez")
-                .build();
-    }
-
-    private AuthSession clientSessionRedis() {
-        return AuthSession.builder()
-                .userId(CUSTOMER_ID)
-                .role("CLIENTE")
-                .fullName("Juan Perez")
-                .build();
     }
 }

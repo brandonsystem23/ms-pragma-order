@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface IListOrdersServicePort {
 
-    Mono<PageResult<OrderQueryModel>> list(String token, String status, int page, int size);
+    Mono<PageResult<OrderQueryModel>> list(Long employeeId, String status, int page, int size);
 }

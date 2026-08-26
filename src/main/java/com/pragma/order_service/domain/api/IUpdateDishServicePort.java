@@ -6,8 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface IUpdateDishServicePort {
 
-    Mono<Dish> update(Long dishId, UpdateDishCommand updateDishCommand, String token);
+    Mono<Dish> update(Long dishId, UpdateDishCommand updateDishCommand, Long ownerId);
 
-    Mono<Dish> updateStatus(Long dishId, Boolean status, String token);
+    Mono<Dish> updateStatus(Long dishId, Boolean status, Long ownerId);
 }
-

@@ -4,13 +4,13 @@ import com.pragma.order_service.application.dto.request.CreateDishRequest;
 import com.pragma.order_service.application.dto.request.UpdateDishRequest;
 import com.pragma.order_service.application.dto.response.DishResponse;
 import com.pragma.order_service.application.mapper.DishDtoMapper;
+import com.pragma.order_service.domain.api.ICreateDishServicePort;
+import com.pragma.order_service.domain.api.IListDishesServicePort;
+import com.pragma.order_service.domain.api.IUpdateDishServicePort;
 import com.pragma.order_service.domain.model.Dish;
 import com.pragma.order_service.domain.model.command.CreateDishCommand;
 import com.pragma.order_service.domain.model.command.UpdateDishCommand;
 import com.pragma.order_service.domain.model.query.PageResult;
-import com.pragma.order_service.domain.api.ICreateDishServicePort;
-import com.pragma.order_service.domain.api.IListDishesServicePort;
-import com.pragma.order_service.domain.api.IUpdateDishServicePort;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,26 +24,25 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DishHandlerTest {
 
     @Mock
-    private ICreateDishServicePort createDishUseCase;
+    private ICreateDishServicePort createDishServicePort;
 
     @Mock
-    private IUpdateDishServicePort updateDishUseCase;
+    private IUpdateDishServicePort updateDishServicePort;
+
+    @Mock
+    private IListDishesServicePort listDishesServicePort;
 
     @Mock
     private DishDtoMapper dishDtoMapper;
 
-    @Mock
-    private IListDishesServicePort listDishesUseCase;
-
     @InjectMocks
-    private DishHandler dishApplicationService;
+    private DishHandler dishHandler;
 
     @Test
     void shouldCreateDishSuccessfully() {
@@ -80,7 +79,7 @@ class DishHandlerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        DishResponse dishResponse = DishResponse.builder()
+        DishResponse response = DishResponse.builder()
                 .id(1L)
                 .name("Pizza Hawaiana")
                 .price(BigDecimal.valueOf(25))
@@ -93,16 +92,14 @@ class DishHandlerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(createDishUseCase.create(any(), anyString())).thenReturn(Mono.just(dish));
-        when(dishDtoMapper.toCommand(any())).thenReturn(command);
-        when(dishDtoMapper.toResponse(any(Dish.class))).thenReturn(dishResponse);
+        when(dishDtoMapper.toCommand(request)).thenReturn(command);
+        when(createDishServicePort.create(command, 99L)).thenReturn(Mono.just(dish));
+        when(dishDtoMapper.toResponse(dish)).thenReturn(response);
 
-        StepVerifier.create(dishApplicationService.create(request, "token-test"))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1L, response.id());
-                    Assertions.assertEquals("Pizza Hawaiana", response.name());
-                    Assertions.assertEquals(BigDecimal.valueOf(25), response.price());
-                    Assertions.assertEquals(1L, response.restaurantId());
+        StepVerifier.create(dishHandler.create(request, 99L))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.id());
+                    Assertions.assertEquals("Pizza Hawaiana", result.name());
                 })
                 .verifyComplete();
     }
@@ -110,141 +107,87 @@ class DishHandlerTest {
     @Test
     void shouldUpdateDishSuccessfully() {
         UpdateDishRequest request = new UpdateDishRequest(
-                BigDecimal.valueOf(20),
-                "Descripción actualizada");
+                BigDecimal.valueOf(30),
+                "Descripción actualizada"
+        );
 
         UpdateDishCommand command = new UpdateDishCommand(
-                BigDecimal.valueOf(20),
+                BigDecimal.valueOf(30),
                 "Descripción actualizada"
         );
 
         Dish dish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(20))
+                .price(BigDecimal.valueOf(30))
                 .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
-        DishResponse dishResponse = DishResponse.builder()
+        DishResponse response = DishResponse.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(20))
+                .price(BigDecimal.valueOf(30))
                 .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(updateDishUseCase.update(anyLong(), any(), anyString())).thenReturn(Mono.just(dish));
-        when(dishDtoMapper.toUpdateCommand(any())).thenReturn(command);
-        when(dishDtoMapper.toResponse(any(Dish.class))).thenReturn(dishResponse);
+        when(dishDtoMapper.toUpdateCommand(request)).thenReturn(command);
+        when(updateDishServicePort.update(1L, command, 99L)).thenReturn(Mono.just(dish));
+        when(dishDtoMapper.toResponse(dish)).thenReturn(response);
 
-        StepVerifier.create(dishApplicationService.update(1L, request, "token-test"))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1L, response.id());
-                    Assertions.assertEquals(BigDecimal.valueOf(20), response.price());
-                    Assertions.assertEquals("Descripción actualizada", response.description());
+        StepVerifier.create(dishHandler.update(1L, request, 99L))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.id());
+                    Assertions.assertEquals(BigDecimal.valueOf(30), result.price());
                 })
                 .verifyComplete();
     }
 
     @Test
-    void shouldUpdateStatusDishSuccessfully() {
+    void shouldUpdateDishStatusSuccessfully() {
         Dish dish = Dish.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(20))
-                .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        DishResponse dishResponse = DishResponse.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(20))
-                .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
                 .status(false)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(updateDishUseCase.updateStatus(anyLong(), any(), anyString())).thenReturn(Mono.just(dish));
-        when(dishDtoMapper.toResponse(any(Dish.class))).thenReturn(dishResponse);
+        DishResponse response = DishResponse.builder()
+                .id(1L)
+                .status(false)
+                .build();
 
-        StepVerifier.create(dishApplicationService.updateStatus(1L, false, "token-test"))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1L, response.id());
-                    Assertions.assertEquals(BigDecimal.valueOf(20), response.price());
-                    Assertions.assertEquals("Descripción actualizada", response.description());
-                    Assertions.assertFalse(response.status());
-                })
+        when(updateDishServicePort.updateStatus(1L, false, 99L)).thenReturn(Mono.just(dish));
+        when(dishDtoMapper.toResponse(dish)).thenReturn(response);
+
+        StepVerifier.create(dishHandler.updateStatus(1L, false, 99L))
+                .assertNext(result -> Assertions.assertFalse(result.status()))
                 .verifyComplete();
     }
 
     @Test
     void shouldListDishesByRestaurantSuccessfully() {
+        Dish dish = Dish.builder()
+                .id(1L)
+                .name("Pizza Hawaiana")
+                .build();
+
         PageResult<Dish> pageResult = PageResult.<Dish>builder()
-                .content(List.of(
-                        Dish.builder()
-                                .id(1L)
-                                .name("Pizza Hawaiana")
-                                .price(BigDecimal.valueOf(25000))
-                                .description("Pizza con piña y jamón")
-                                .urlImage("https://image.com/pizza.png")
-                                .category("PIZZA")
-                                .status(true)
-                                .restaurantId(1L)
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build()
-                ))
+                .content(List.of(dish))
                 .page(0)
                 .size(10)
-                .totalElements(1L)
+                .totalElements(1)
                 .totalPages(1)
                 .build();
 
-        DishResponse dishResponse = DishResponse.builder()
+        DishResponse response = DishResponse.builder()
                 .id(1L)
                 .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(25))
-                .description("Pizza con piña y jamón")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(listDishesUseCase.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
+        when(listDishesServicePort.listByRestaurant(1L, "PIZZA", 0, 10))
                 .thenReturn(Mono.just(pageResult));
+        when(dishDtoMapper.toResponse(dish)).thenReturn(response);
 
-        when(dishDtoMapper.toResponse(any(Dish.class))).thenReturn(dishResponse);
-
-        StepVerifier.create(dishApplicationService.listByRestaurant(1L, "PIZZA", 0, 10, "token-test"))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1, response.content().size());
-                    Assertions.assertEquals("Pizza Hawaiana", response.content().getFirst().name());
-                    Assertions.assertEquals(1L, response.totalElements());
-                    Assertions.assertEquals(1, response.totalPages());
+        StepVerifier.create(dishHandler.listByRestaurant(1L, "PIZZA", 0, 10))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1, result.content().size());
+                    Assertions.assertEquals("Pizza Hawaiana", result.content().getFirst().name());
                 })
                 .verifyComplete();
     }

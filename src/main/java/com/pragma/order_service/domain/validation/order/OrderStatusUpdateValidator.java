@@ -6,8 +6,6 @@ import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Order;
 import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.RoleNames;
-import com.pragma.order_service.domain.model.auth.AuthSession;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -15,20 +13,17 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class OrderStatusUpdateValidator {
 
-    private final IRedisCachePort iRedisCachePort;
-    private final IRestaurantPersistencePort iRestaurantPersistencePort;
+    private final IRestaurantPersistencePort restaurantPersistencePort;
 
-    public Mono<AuthSession> getSession(String token) {
-        return iRedisCachePort.findByToken(token)
-                .switchIfEmpty(Mono.error(new DomainException(
-                        DomainErrorCode.INVALID_TOKEN,
-                        DomainErrorMessages.INVALID_TOKEN
-                )));
-    }
+    public Mono<Void> validateEmployeeCanAssignOrder(Long employeeId, String role, Order order) {
+        if (!RoleNames.EMPLOYEE.equals(role)) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.ACCESS_DENIED,
+                    DomainErrorMessages.ORDER_ASSIGN_ACCESS_DENIED
+            ));
+        }
 
-    public Mono<Void> validateAssignOrder(Order order, AuthSession session) {
-        return validateEmployeeRole(session, DomainErrorMessages.ORDER_ASSIGN_ACCESS_DENIED)
-                .then(Mono.defer(() -> findRestaurantIdByEmployee(session.userId())))
+        return findRestaurantIdByEmployeeOrFail(employeeId)
                 .flatMap(restaurantId -> {
                     if (!restaurantId.equals(order.getRestaurantId())) {
                         return Mono.error(new DomainException(
@@ -55,96 +50,86 @@ public class OrderStatusUpdateValidator {
                 });
     }
 
-    public Mono<Void> validateMarkReady(Order order, AuthSession session) {
-        return validateEmployeeRole(session, DomainErrorMessages.ORDER_READY_ACCESS_DENIED)
-                .then(Mono.defer(() -> {
-                    if (!OrderStatus.IN_PREPARATION.equals(order.getStatus())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.VALIDATION_ERROR,
-                                DomainErrorMessages.ORDER_READY_INVALID_STATUS
-                        ));
-                    }
-
-                    if (order.getEmployeeAssignedId() == null || !session.userId().equals(order.getEmployeeAssignedId())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.ACCESS_DENIED,
-                                DomainErrorMessages.ORDER_READY_NOT_ASSIGNED_EMPLOYEE
-                        ));
-                    }
-
-                    return Mono.empty();
-                }));
-    }
-
-    public Mono<Void> validateDeliver(Order order, AuthSession session) {
-        return validateEmployeeRole(session, DomainErrorMessages.ORDER_DELIVER_ACCESS_DENIED)
-                .then(Mono.defer(() -> {
-                    if (!OrderStatus.READY.equals(order.getStatus())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.VALIDATION_ERROR,
-                                DomainErrorMessages.ORDER_DELIVER_INVALID_STATUS
-                        ));
-                    }
-
-                    if (order.getEmployeeAssignedId() == null || !session.userId().equals(order.getEmployeeAssignedId())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.ACCESS_DENIED,
-                                DomainErrorMessages.ORDER_DELIVER_NOT_ASSIGNED_EMPLOYEE
-                        ));
-                    }
-
-                    return Mono.empty();
-                }));
-    }
-
-    public Mono<Void> validateCancel(Order order, AuthSession session) {
-        return validateClientRole(session)
-                .then(Mono.defer(() -> {
-                    if (!session.userId().equals(order.getCustomerId())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.ACCESS_DENIED,
-                                DomainErrorMessages.ORDER_CANCEL_NOT_CREATED
-                        ));
-                    }
-
-                    if (!OrderStatus.PENDING.equals(order.getStatus())) {
-                        return Mono.error(new DomainException(
-                                DomainErrorCode.VALIDATION_ERROR,
-                                DomainErrorMessages.ORDER_CANCEL_INVALID_STATUS
-                        ));
-                    }
-
-                    return Mono.empty();
-                }));
-    }
-
-    private Mono<Long> findRestaurantIdByEmployee(Long employeeId) {
-        return iRestaurantPersistencePort.findRestaurantIdByEmployeeId(employeeId)
-                .switchIfEmpty(Mono.error(new DomainException(
-                        DomainErrorCode.EMPLOYEE_RESTAURANT_NOT_FOUND,
-                        DomainErrorMessages.EMPLOYEE_RESTAURANT_NOT_FOUND
-                )));
-    }
-
-    private Mono<Void> validateEmployeeRole(AuthSession session, String message) {
-        if (!RoleNames.EMPLOYEE.equals(session.role())) {
+    public Mono<Void> validateEmployeeCanMarkOrderReady(Long employeeId, String role, Order order) {
+        if (!RoleNames.EMPLOYEE.equals(role)) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
-                    message
+                    DomainErrorMessages.ORDER_READY_ACCESS_DENIED
+            ));
+        }
+
+        if (!OrderStatus.IN_PREPARATION.equals(order.getStatus())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.VALIDATION_ERROR,
+                    DomainErrorMessages.ORDER_READY_INVALID_STATUS
+            ));
+        }
+
+        if (order.getEmployeeAssignedId() == null || !employeeId.equals(order.getEmployeeAssignedId())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.ACCESS_DENIED,
+                    DomainErrorMessages.ORDER_READY_NOT_ASSIGNED_EMPLOYEE
             ));
         }
 
         return Mono.empty();
     }
 
-    private Mono<Void> validateClientRole(AuthSession session) {
-        if (!RoleNames.CLIENT.equals(session.role())) {
+    public Mono<Void> validateEmployeeCanDeliverOrder(Long employeeId, String role, Order order) {
+        if (!RoleNames.EMPLOYEE.equals(role)) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.ACCESS_DENIED,
+                    DomainErrorMessages.ORDER_DELIVER_ACCESS_DENIED
+            ));
+        }
+
+        if (!OrderStatus.READY.equals(order.getStatus())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.VALIDATION_ERROR,
+                    DomainErrorMessages.ORDER_DELIVER_INVALID_STATUS
+            ));
+        }
+
+        if (order.getEmployeeAssignedId() == null || !employeeId.equals(order.getEmployeeAssignedId())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.ACCESS_DENIED,
+                    DomainErrorMessages.ORDER_DELIVER_NOT_ASSIGNED_EMPLOYEE
+            ));
+        }
+
+        return Mono.empty();
+    }
+
+    public Mono<Void> validateClientCanCancelOrder(Long customerId, String role, Order order) {
+        if (!RoleNames.CLIENT.equals(role)) {
             return Mono.error(new DomainException(
                     DomainErrorCode.ACCESS_DENIED,
                     DomainErrorMessages.ORDER_CANCEL_ACCESS_DENIED
             ));
         }
 
+        if (!customerId.equals(order.getCustomerId())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.ACCESS_DENIED,
+                    DomainErrorMessages.ORDER_CANCEL_NOT_CREATED
+            ));
+        }
+
+        if (!OrderStatus.PENDING.equals(order.getStatus())) {
+            return Mono.error(new DomainException(
+                    DomainErrorCode.VALIDATION_ERROR,
+                    DomainErrorMessages.ORDER_CANCEL_INVALID_STATUS
+            ));
+        }
+
         return Mono.empty();
+    }
+
+    public Mono<Long> findRestaurantIdByEmployeeOrFail(Long employeeId) {
+        return restaurantPersistencePort.findRestaurantIdByEmployeeId(employeeId)
+                .switchIfEmpty(Mono.error(new DomainException(
+                        DomainErrorCode.EMPLOYEE_RESTAURANT_NOT_FOUND,
+                        DomainErrorMessages.EMPLOYEE_RESTAURANT_NOT_FOUND
+                )));
     }
 }

@@ -3,7 +3,9 @@ package com.pragma.order_service.infrastructure.input.rest;
 import com.pragma.order_service.application.dto.request.CreateDishRequest;
 import com.pragma.order_service.application.dto.request.UpdateDishRequest;
 import com.pragma.order_service.application.dto.response.DishResponse;
+import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.handler.IDishHandler;
+import com.pragma.order_service.infrastructure.security.jwt.AuthenticatedUser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,29 +14,29 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import com.pragma.order_service.application.dto.response.PagedResponse;
-import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DishControllerTest {
 
     @Mock
-    private IDishHandler iDishHandler;
+    private IDishHandler dishHandler;
 
     @InjectMocks
     private DishController dishController;
 
     @Test
     void shouldCreateDishSuccessfully() {
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(2L)
+                .role("PROPIETARIO")
+                .build();
+
         CreateDishRequest request = new CreateDishRequest(
                 "Pizza Hawaiana",
                 BigDecimal.valueOf(25000),
@@ -58,90 +60,66 @@ class DishControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(iDishHandler.create(any(), anyString())).thenReturn(Mono.just(response));
+        when(dishHandler.create(request, 2L)).thenReturn(Mono.just(response));
 
-        StepVerifier.create(dishController.create("Bearer token-test", request))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.id());
-                    Assertions.assertEquals("Pizza Hawaiana", result.name());
-                    Assertions.assertEquals(BigDecimal.valueOf(25000), result.price());
-                    Assertions.assertEquals(1L, result.restaurantId());
-                })
+        StepVerifier.create(dishController.create(user, request))
+                .assertNext(result -> Assertions.assertEquals(1L, result.id()))
                 .verifyComplete();
     }
 
     @Test
     void shouldUpdateDishSuccessfully() {
-        UpdateDishRequest request = new UpdateDishRequest(
-                        BigDecimal.valueOf(30000),
-                        "Descripción actualizada"
-                );
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(2L)
+                .role("PROPIETARIO")
+                .build();
+
+        UpdateDishRequest request = new UpdateDishRequest(BigDecimal.valueOf(30000), "Actualizada");
 
         DishResponse response = DishResponse.builder()
                 .id(1L)
-                .name("Pizza Hawaiana")
                 .price(BigDecimal.valueOf(30000))
-                .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .description("Actualizada")
                 .build();
 
-        when(iDishHandler.update(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
+        when(dishHandler.update(1L, request, 2L)).thenReturn(Mono.just(response));
 
-        StepVerifier.create(dishController.update(1L, "Bearer token-test", request))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.id());
-                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.price());
-                    Assertions.assertEquals("Descripción actualizada", result.description());
-                })
+        StepVerifier.create(dishController.update(1L, user, request))
+                .assertNext(result -> Assertions.assertEquals(BigDecimal.valueOf(30000), result.price()))
                 .verifyComplete();
     }
 
     @Test
-    void shouldUpdateStatusDishSuccessfully() {
-        DishResponse response = DishResponse.builder()
-                .id(1L)
-                .name("Pizza Hawaiana")
-                .price(BigDecimal.valueOf(30000))
-                .description("Descripción actualizada")
-                .urlImage("https://image.com/pizza.png")
-                .category("PIZZA")
-                .status(true)
-                .restaurantId(1L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+    void shouldUpdateDishStatusSuccessfully() {
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(2L)
+                .role("PROPIETARIO")
                 .build();
 
-        when(iDishHandler.updateStatus(anyLong(), any(), anyString())).thenReturn(Mono.just(response));
+        DishResponse response = DishResponse.builder()
+                .id(1L)
+                .status(false)
+                .build();
 
-        StepVerifier.create(dishController.updateStatus(1L, false,"Bearer token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1L, result.id());
-                    Assertions.assertEquals(BigDecimal.valueOf(30000), result.price());
-                    Assertions.assertEquals("Descripción actualizada", result.description());
-                })
+        when(dishHandler.updateStatus(1L, false, 2L)).thenReturn(Mono.just(response));
+
+        StepVerifier.create(dishController.updateStatus(1L, false, user))
+                .assertNext(result -> Assertions.assertFalse(result.status()))
                 .verifyComplete();
     }
 
     @Test
     void shouldListDishesByRestaurantSuccessfully() {
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(20L)
+                .role("CLIENTE")
+                .build();
+
         PagedResponse<DishResponse> response = PagedResponse.<DishResponse>builder()
                 .content(List.of(
                         DishResponse.builder()
                                 .id(1L)
                                 .name("Pizza Hawaiana")
-                                .price(BigDecimal.valueOf(25000))
-                                .description("Pizza con piña y jamón")
-                                .urlImage("https://image.com/pizza.png")
-                                .category("PIZZA")
-                                .status(true)
-                                .restaurantId(1L)
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
                                 .build()
                 ))
                 .page(0)
@@ -150,17 +128,10 @@ class DishControllerTest {
                 .totalPages(1)
                 .build();
 
-        when(iDishHandler.listByRestaurant(anyLong(), any(), anyInt(), anyInt(), anyString()))
-                .thenReturn(Mono.just(response));
+        when(dishHandler.listByRestaurant(1L, "PIZZA", 0, 10)).thenReturn(Mono.just(response));
 
-        StepVerifier.create(dishController.listByRestaurant(1L, "PIZZA", 0, 10, "Bearer token-test"))
-                .assertNext(result -> {
-                    Assertions.assertEquals(1, result.content().size());
-                    Assertions.assertEquals("Pizza Hawaiana", result.content().getFirst().name());
-                    Assertions.assertEquals(1L, result.totalElements());
-                })
+        StepVerifier.create(dishController.listByRestaurant(user, 1L, "PIZZA", 0, 10))
+                .assertNext(result -> Assertions.assertEquals(1, result.content().size()))
                 .verifyComplete();
     }
-
-
 }

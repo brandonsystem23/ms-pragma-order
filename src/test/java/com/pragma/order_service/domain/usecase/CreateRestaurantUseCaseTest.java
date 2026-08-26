@@ -15,8 +15,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -57,9 +55,12 @@ class CreateRestaurantUseCaseTest {
                 .status(true)
                 .build();
 
-        doNothing().when(restaurantDomainValidator).validateForCreate(any());
-        when(restaurantRegistrationValidator.validate(anyString(), anyLong(), anyString()))
-                .thenReturn(Mono.empty());
+        doNothing().when(restaurantDomainValidator).validateForCreate(command);
+        when(restaurantRegistrationValidator.validateRestaurantCreationRules(
+                command.nit(),
+                command.ownerId(),
+                "token-test"
+        )).thenReturn(Mono.empty());
         when(restaurantPersistencePort.save(any()))
                 .thenReturn(Mono.just(savedRestaurant));
 

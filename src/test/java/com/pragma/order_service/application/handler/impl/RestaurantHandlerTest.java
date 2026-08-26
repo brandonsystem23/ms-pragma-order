@@ -4,12 +4,12 @@ import com.pragma.order_service.application.dto.request.CreateRestaurantRequest;
 import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.mapper.RestaurantDtoMapper;
+import com.pragma.order_service.domain.api.ICreateRestaurantServicePort;
+import com.pragma.order_service.domain.api.IListRestaurantsServicePort;
 import com.pragma.order_service.domain.model.Restaurant;
 import com.pragma.order_service.domain.model.command.CreateRestaurantCommand;
 import com.pragma.order_service.domain.model.query.PageResult;
 import com.pragma.order_service.domain.model.query.RestaurantListItem;
-import com.pragma.order_service.domain.api.ICreateRestaurantServicePort;
-import com.pragma.order_service.domain.api.IListRestaurantsServicePort;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,23 +22,22 @@ import reactor.test.StepVerifier;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RestaurantHandlerTest {
 
     @Mock
-    private ICreateRestaurantServicePort createRestaurantUseCase;
+    private ICreateRestaurantServicePort createRestaurantServicePort;
 
     @Mock
-    private IListRestaurantsServicePort listRestaurantsUseCase;
+    private IListRestaurantsServicePort listRestaurantsServicePort;
 
     @Mock
     private RestaurantDtoMapper restaurantDtoMapper;
 
     @InjectMocks
-    private RestaurantHandler restaurantApplicationService;
+    private RestaurantHandler restaurantHandler;
 
     @Test
     void shouldCreateRestaurantSuccessfully() {
@@ -73,7 +72,7 @@ class RestaurantHandlerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        RestaurantResponse restaurantResponse = RestaurantResponse.builder()
+        RestaurantResponse response = RestaurantResponse.builder()
                 .id(1L)
                 .name("Restaurante La 70")
                 .nit("123456789")
@@ -86,52 +85,47 @@ class RestaurantHandlerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(createRestaurantUseCase.create(any(), anyString())).thenReturn(Mono.just(restaurant));
-        when(restaurantDtoMapper.toResponse(any(Restaurant.class))).thenReturn(restaurantResponse);
-        when(restaurantDtoMapper.toCommand(any())).thenReturn(command);
+        when(restaurantDtoMapper.toCommand(request)).thenReturn(command);
+        when(createRestaurantServicePort.create(command, "token-test")).thenReturn(Mono.just(restaurant));
+        when(restaurantDtoMapper.toResponse(restaurant)).thenReturn(response);
 
-        StepVerifier.create(restaurantApplicationService.create(request, "token-test"))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1L, response.id());
-                    Assertions.assertEquals("Restaurante La 70", response.name());
-                    Assertions.assertEquals("123456789", response.nit());
-                    Assertions.assertEquals(2L, response.ownerId());
-                    Assertions.assertTrue(response.status());
+        StepVerifier.create(restaurantHandler.create(request, "token-test"))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1L, result.id());
+                    Assertions.assertEquals("Restaurante La 70", result.name());
                 })
                 .verifyComplete();
     }
 
     @Test
     void shouldListRestaurantsSuccessfully() {
+        RestaurantListItem item = RestaurantListItem.builder()
+                .id(1L)
+                .name("Burger House")
+                .urlLogo("https://logo.com/burger.png")
+                .build();
+
         PageResult<RestaurantListItem> pageResult = PageResult.<RestaurantListItem>builder()
-                .content(List.of(
-                        RestaurantListItem.builder()
-                                .id(1L)
-                                .name("Burger House")
-                                .urlLogo("https://logo.com/burger.png")
-                                .build()
-                ))
+                .content(List.of(item))
                 .page(0)
                 .size(10)
                 .totalElements(1L)
                 .totalPages(1)
                 .build();
 
-        RestaurantListResponse restaurant = RestaurantListResponse.builder()
+        RestaurantListResponse response = RestaurantListResponse.builder()
                 .id(1L)
                 .name("Burger House")
-                .urlLogo("https://example.com/logo.png")
+                .urlLogo("https://logo.com/burger.png")
                 .build();
 
-        when(listRestaurantsUseCase.list(anyString(), anyInt(), anyInt()))
-                .thenReturn(Mono.just(pageResult));
-        when(restaurantDtoMapper.toResponse(any(RestaurantListItem.class))).thenReturn(restaurant);
+        when(listRestaurantsServicePort.list(0, 10)).thenReturn(Mono.just(pageResult));
+        when(restaurantDtoMapper.toResponse(item)).thenReturn(response);
 
-        StepVerifier.create(restaurantApplicationService.list("token-test", 0, 10))
-                .assertNext(response -> {
-                    Assertions.assertEquals(1, response.content().size());
-                    Assertions.assertEquals("Burger House", response.content().getFirst().name());
-                    Assertions.assertEquals(1L, response.totalElements());
+        StepVerifier.create(restaurantHandler.list(0, 10))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1, result.content().size());
+                    Assertions.assertEquals("Burger House", result.content().getFirst().name());
                 })
                 .verifyComplete();
     }

@@ -17,44 +17,43 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class DishHandler implements IDishHandler {
 
-    private final ICreateDishServicePort iCreateDishServicePort;
-    private final IUpdateDishServicePort iUpdateDishServicePort;
-    private final IListDishesServicePort iListDishesServicePort;
+    private final ICreateDishServicePort createDishServicePort;
+    private final IUpdateDishServicePort updateDishServicePort;
+    private final IListDishesServicePort listDishesServicePort;
     private final DishDtoMapper dishDtoMapper;
 
     @Override
-    public Mono<DishResponse> create(CreateDishRequest request, String token) {
-        return iCreateDishServicePort.create(
+    public Mono<DishResponse> create(CreateDishRequest request, Long ownerId) {
+        return createDishServicePort.create(
                         dishDtoMapper.toCommand(request),
-                        token
+                        ownerId
                 )
                 .map(dishDtoMapper::toResponse);
     }
 
     @Override
-    public Mono<DishResponse> update(Long dishId, UpdateDishRequest request, String token) {
-        return iUpdateDishServicePort.update(
+    public Mono<DishResponse> update(Long dishId, UpdateDishRequest request, Long ownerId) {
+        return updateDishServicePort.update(
                         dishId,
                         dishDtoMapper.toUpdateCommand(request),
-                        token
+                        ownerId
                 )
                 .map(dishDtoMapper::toResponse);
     }
 
     @Override
-    public Mono<DishResponse> updateStatus(Long dishId, Boolean status, String token) {
-        return iUpdateDishServicePort.updateStatus(
+    public Mono<DishResponse> updateStatus(Long dishId, Boolean status, Long ownerId) {
+        return updateDishServicePort.updateStatus(
                         dishId,
                         status,
-                        token
+                        ownerId
                 )
                 .map(dishDtoMapper::toResponse);
     }
 
     @Override
-    public Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size,
-                                                              String token) {
-        return iListDishesServicePort.listByRestaurant(restaurantId, category, page, size, token)
+    public Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size) {
+        return listDishesServicePort.listByRestaurant(restaurantId, category, page, size)
                 .map(result -> PagedResponse.<DishResponse>builder()
                         .content(result.content().stream()
                                 .map(dishDtoMapper::toResponse)

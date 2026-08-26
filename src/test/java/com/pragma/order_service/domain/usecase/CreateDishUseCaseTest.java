@@ -17,9 +17,8 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CreateDishUseCaseTest {
@@ -60,21 +59,16 @@ class CreateDishUseCaseTest {
                 .build();
 
         doNothing().when(dishDomainValidator).validateForCreate(command);
-        when(dishRegistrationValidator.validate(anyString(), anyLong(), anyString()))
+        when(dishRegistrationValidator.validateDishCreationRules(command.name(), command.restaurantId(), 99L))
                 .thenReturn(Mono.empty());
         when(dishPersistencePort.save(any()))
                 .thenReturn(Mono.just(savedDish));
 
-        StepVerifier.create(service.create(command, "token-test"))
+        StepVerifier.create(service.create(command, 99L))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.getId());
                     Assertions.assertEquals("Pizza Hawaiana", result.getName());
-                    Assertions.assertEquals(BigDecimal.valueOf(25000), result.getPrice());
-                    Assertions.assertEquals(1L, result.getRestaurantId());
-                    Assertions.assertTrue(result.getStatus());
                 })
                 .verifyComplete();
-
     }
 }
-

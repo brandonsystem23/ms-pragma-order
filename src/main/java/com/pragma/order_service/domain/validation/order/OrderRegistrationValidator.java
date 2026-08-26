@@ -4,10 +4,7 @@ import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
 import com.pragma.order_service.domain.exception.DomainException;
 import com.pragma.order_service.domain.model.Dish;
-import com.pragma.order_service.domain.model.RoleNames;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.CreateOrderItemCommand;
-import com.pragma.order_service.domain.spi.IRedisCachePort;
 import com.pragma.order_service.domain.spi.IDishPersistencePort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
 import com.pragma.order_service.domain.spi.IRestaurantPersistencePort;
@@ -20,43 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderRegistrationValidator {
 
-    private final IRedisCachePort authSessionPort;
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final IDishPersistencePort dishPersistencePort;
     private final IOrderPersistencePort orderPersistencePort;
 
-    public Mono<Long> validate(Long restaurantId, List<CreateOrderItemCommand> items, String token) {
-        return validateClientRole(token)
-                .flatMap(authSession ->
-                                validateRestaurantExists(restaurantId)
-                                .then(Mono.defer(() -> validateCustomerWithoutActiveOrder(authSession.userId(),
-                                        restaurantId)))
-                                .then(Mono.defer(() -> validateDishes(items, restaurantId)))
-                                .thenReturn(authSession.userId())
-                );
+    public Mono<Void> validateOrderCreationRules(Long restaurantId, List<CreateOrderItemCommand> items, Long customerId) {
+        return validateRestaurantExists(restaurantId)
+                .then(Mono.defer(() -> validateCustomerHasNoActiveOrder(customerId, restaurantId)))
+                .then(Mono.defer(() -> validateAllDishesBelongToRestaurant(items, restaurantId)));
     }
 
-    private Mono<AuthSession> validateClientRole(String token) {
-        return authSessionPort.findByToken(token)
-                .switchIfEmpty(Mono.error(new DomainException(
-                        DomainErrorCode.INVALID_TOKEN,
-                        DomainErrorMessages.INVALID_TOKEN
-                )))
-                .flatMap(this::checkClientRole);
-    }
-
-    private Mono<AuthSession> checkClientRole(AuthSession authSession) {
-        if (!RoleNames.CLIENT.equals(authSession.role())) {
-            return Mono.error(new DomainException(
-                    DomainErrorCode.ACCESS_DENIED,
-                    DomainErrorMessages.ORDER_CREATE_ACCESS_DENIED
-            ));
-        }
-
-        return Mono.just(authSession);
-    }
-
-    private Mono<Void> validateCustomerWithoutActiveOrder(Long customerId, Long restaurantId) {
+    public Mono<Void> validateCustomerHasNoActiveOrder(Long customerId, Long restaurantId) {
         return orderPersistencePort.existsByCustomerIdAndRestaurantIdAndStatusIn(customerId, restaurantId)
                 .flatMap(exists -> Boolean.TRUE.equals(exists)
                         ? Mono.error(new DomainException(
@@ -66,7 +37,7 @@ public class OrderRegistrationValidator {
                         : Mono.empty());
     }
 
-    private Mono<Void> validateRestaurantExists(Long restaurantId) {
+    public Mono<Void> validateRestaurantExists(Long restaurantId) {
         return restaurantPersistencePort.existById(restaurantId)
                 .flatMap(exists -> Boolean.TRUE.equals(exists)
                         ? Mono.empty()
@@ -76,22 +47,22 @@ public class OrderRegistrationValidator {
                 )));
     }
 
-    private Mono<Void> validateDishes(List<CreateOrderItemCommand> items, Long restaurantId) {
+    public Mono<Void> validateAllDishesBelongToRestaurant(List<CreateOrderItemCommand> items, Long restaurantId) {
         return Flux.fromIterable(items)
-                .flatMap(item -> validateDish(item.dishId(), restaurantId))
+                .flatMap(item -> findActiveDishByIdOrFail(item.dishId())
+                        .flatMap(dish -> validateDishBelongsToRestaurant(dish, restaurantId)))
                 .then();
     }
 
-    private Mono<Void> validateDish(Long dishId, Long restaurantId) {
+    public Mono<Dish> findActiveDishByIdOrFail(Long dishId) {
         return dishPersistencePort.findByIdAndStatusTrue(dishId)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.DISH_NOT_FOUND,
                         DomainErrorMessages.DISH_NOT_FOUND
-                )))
-                .flatMap(dish -> validateDishBelongsToRestaurant(dish, restaurantId));
+                )));
     }
 
-    private Mono<Void> validateDishBelongsToRestaurant(Dish dish, Long restaurantId) {
+    public Mono<Void> validateDishBelongsToRestaurant(Dish dish, Long restaurantId) {
         if (!restaurantId.equals(dish.getRestaurantId())) {
             return Mono.error(new DomainException(
                     DomainErrorCode.INVALID_ORDER_RESTAURANT,

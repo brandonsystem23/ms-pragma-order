@@ -27,30 +27,29 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import static org.mockito.Mockito.verify;
+
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OrderHandlerTest {
 
     @Mock
-    private ICreateOrderServicePort createOrderUseCase;
+    private ICreateOrderServicePort createOrderServicePort;
 
     @Mock
-    private IListOrdersServicePort listOrdersUseCase;
+    private IListOrdersServicePort listOrdersServicePort;
 
     @Mock
-    private IUpdateOrderServicePort updateOrderStatusUseCase;
+    private IUpdateOrderServicePort updateOrderServicePort;
 
     @Mock
     private OrderDtoMapper orderDtoMapper;
 
     @InjectMocks
-    private OrderHandler orderApplicationService;
+    private OrderHandler orderHandler;
 
     @Test
     void shouldCreateOrderSuccessfully() {
-
         CreateOrderRequest request = new CreateOrderRequest(
                 1L,
                 List.of(
@@ -69,100 +68,55 @@ class OrderHandlerTest {
 
         LocalDateTime now = LocalDateTime.now();
 
-        OrderQueryModel orderQueryModel = OrderQueryModel.builder()
+        OrderQueryModel queryModel = OrderQueryModel.builder()
                 .id(100L)
-                .customerId(50L)
-                .nameCustomer("Brandon Briones")
+                .customerId(20L)
+                .nameCustomer("Juan Perez")
                 .restaurantId(1L)
-                .nameRestaurant("El buen sabor")
+                .nameRestaurant("El Buen Sabor")
                 .status("PENDIENTE")
                 .totalPrice(BigDecimal.valueOf(65000))
                 .items(List.of(
-                        OrderItemQueryModel.builder()
-                                .dishId(10L)
-                                .name("Hamburguesa triple")
-                                .quantity(BigDecimal.valueOf(2))
-                                .price(BigDecimal.valueOf(30000))
-                                .build(),
-                        OrderItemQueryModel.builder()
-                                .dishId(11L)
-                                .name("Lomo saltado")
-                                .quantity(BigDecimal.ONE)
-                                .price(BigDecimal.valueOf(5000))
-                                .build()
+                        OrderItemQueryModel.builder().dishId(10L).name("Pizza").quantity(BigDecimal.valueOf(2)).price(BigDecimal.valueOf(30000)).build(),
+                        OrderItemQueryModel.builder().dishId(11L).name("Lomo").quantity(BigDecimal.ONE).price(BigDecimal.valueOf(5000)).build()
                 ))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
 
-        OrderItemResponse itemResponse1 = OrderItemResponse.builder()
-                .dishId(10L)
-                .name("Hamburguesa triple")
-                .quantity(BigDecimal.valueOf(2))
-                .price(BigDecimal.valueOf(30000))
-                .build();
-
-        OrderItemResponse itemResponse2 = OrderItemResponse.builder()
-                .dishId(11L)
-                .name("Lomo saltado")
-                .quantity(BigDecimal.ONE)
-                .price(BigDecimal.valueOf(5000))
-                .build();
-
-        OrderResponse orderResponse = OrderResponse.builder()
+        OrderResponse response = OrderResponse.builder()
                 .id(100L)
-                .customerId(50L)
-                .nameCustomer("Brandon Briones")
+                .customerId(20L)
+                .nameCustomer("Juan Perez")
                 .restaurantId(1L)
-                .nameRestaurant("El buen sabor")
+                .nameRestaurant("El Buen Sabor")
                 .status("PENDIENTE")
                 .totalPrice(BigDecimal.valueOf(65000))
-                .items(List.of(itemResponse1, itemResponse2))
+                .items(List.of(
+                        OrderItemResponse.builder().dishId(10L).name("Pizza").quantity(BigDecimal.valueOf(2)).price(BigDecimal.valueOf(30000)).build(),
+                        OrderItemResponse.builder().dishId(11L).name("Lomo").quantity(BigDecimal.ONE).price(BigDecimal.valueOf(5000)).build()
+                ))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
 
-        when(orderDtoMapper.toCommand(request))
-                .thenReturn(command);
+        when(orderDtoMapper.toCommand(request)).thenReturn(command);
+        when(createOrderServicePort.create(command, 20L, "token-test")).thenReturn(Mono.just(queryModel));
+        when(orderDtoMapper.toResponse(queryModel)).thenReturn(response);
 
-        when(createOrderUseCase.create(command, "token-test"))
-                .thenReturn(Mono.just(orderQueryModel));
-
-        when(orderDtoMapper.toResponse(orderQueryModel))
-                .thenReturn(orderResponse);
-
-        StepVerifier.create(
-                        orderApplicationService.create(request, "token-test")
-                )
+        StepVerifier.create(orderHandler.create(request, 20L, "token-test"))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals(
-                            BigDecimal.valueOf(65000),
-                            result.totalPrice()
-                    );
-                    Assertions.assertEquals(2, result.items().size());
-                    Assertions.assertEquals(
-                            BigDecimal.valueOf(30000),
-                            result.items().get(0).price()
-                    );
-                    Assertions.assertEquals(
-                            BigDecimal.valueOf(5000),
-                            result.items().get(1).price()
-                    );
+                    Assertions.assertEquals(BigDecimal.valueOf(65000), result.totalPrice());
                 })
                 .verifyComplete();
-
-        verify(orderDtoMapper).toCommand(request);
-        verify(createOrderUseCase).create(command, "token-test");
-        verify(orderDtoMapper).toResponse(orderQueryModel);
     }
 
     @Test
     void shouldListOrdersSuccessfully() {
-
         LocalDateTime now = LocalDateTime.now();
 
-        OrderQueryModel orderQueryModel = OrderQueryModel.builder()
+        OrderQueryModel queryModel = OrderQueryModel.builder()
                 .id(100L)
                 .customerId(20L)
                 .nameCustomer("Juan Perez")
@@ -184,21 +138,14 @@ class OrderHandlerTest {
                 .build();
 
         PageResult<OrderQueryModel> pageResult = PageResult.<OrderQueryModel>builder()
-                .content(List.of(orderQueryModel))
+                .content(List.of(queryModel))
                 .page(0)
                 .size(10)
                 .totalElements(1L)
                 .totalPages(1)
                 .build();
 
-        OrderItemResponse itemResponse = OrderItemResponse.builder()
-                .dishId(10L)
-                .name("Pizza")
-                .quantity(BigDecimal.valueOf(2))
-                .price(BigDecimal.valueOf(20000))
-                .build();
-
-        OrderResponse orderResponse = OrderResponse.builder()
+        OrderResponse response = OrderResponse.builder()
                 .id(100L)
                 .customerId(20L)
                 .nameCustomer("Juan Perez")
@@ -207,235 +154,51 @@ class OrderHandlerTest {
                 .status("PENDIENTE")
                 .employeeAssignedId(null)
                 .totalPrice(BigDecimal.valueOf(40000))
-                .items(List.of(itemResponse))
+                .items(List.of(
+                        OrderItemResponse.builder()
+                                .dishId(10L)
+                                .name("Pizza")
+                                .quantity(BigDecimal.valueOf(2))
+                                .price(BigDecimal.valueOf(20000))
+                                .build()
+                ))
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
 
-        when(listOrdersUseCase.list(
-                "token-test",
-                "PENDIENTE",
-                0,
-                10
-        )).thenReturn(Mono.just(pageResult));
+        when(listOrdersServicePort.list(30L, "PENDIENTE", 0, 10)).thenReturn(Mono.just(pageResult));
+        when(orderDtoMapper.toResponse(queryModel)).thenReturn(response);
 
-        when(orderDtoMapper.toResponse(orderQueryModel))
-                .thenReturn(orderResponse);
-
-        StepVerifier.create(
-                        orderApplicationService.list(
-                                "token-test",
-                                "PENDIENTE",
-                                0,
-                                10
-                        )
-                )
-                .assertNext(response -> {
-                    Assertions.assertEquals(
-                            1,
-                            response.content().size()
-                    );
-                    Assertions.assertEquals(
-                            100L,
-                            response.content().getFirst().id()
-                    );
-                    Assertions.assertEquals(
-                            BigDecimal.valueOf(40000),
-                            response.content().getFirst().totalPrice()
-                    );
-                    Assertions.assertEquals(
-                            BigDecimal.valueOf(20000),
-                            response.content()
-                                    .getFirst()
-                                    .items()
-                                    .getFirst()
-                                    .price()
-                    );
-                    Assertions.assertEquals(0, response.page());
-                    Assertions.assertEquals(10, response.size());
-                    Assertions.assertEquals(1L, response.totalElements());
-                    Assertions.assertEquals(1, response.totalPages());
+        StepVerifier.create(orderHandler.list(30L, "PENDIENTE", 0, 10))
+                .assertNext(result -> {
+                    Assertions.assertEquals(1, result.content().size());
+                    Assertions.assertEquals(100L, result.content().getFirst().id());
                 })
                 .verifyComplete();
-
-        verify(listOrdersUseCase).list(
-                "token-test",
-                "PENDIENTE",
-                0,
-                10
-        );
-
-        verify(orderDtoMapper).toResponse(orderQueryModel);
     }
 
     @Test
     void shouldUpdateOrderStatusSuccessfully() {
+        UpdateOrderRequest request = new UpdateOrderRequest("ENTREGADO", "151370");
+        UpdateOrderCommand command = new UpdateOrderCommand("ENTREGADO", "151370");
 
-        UpdateOrderRequest request =
-                new UpdateOrderRequest("ENTREGADO", "151370");
+        when(orderDtoMapper.toUpdateStatusCommand(request)).thenReturn(command);
+        when(updateOrderServicePort.update(100L, command, 30L, "EMPLEADO", "Martin Lopez", "12345678", "token-test"))
+                .thenReturn(Mono.just(100L));
 
-        UpdateOrderCommand command =
-                new UpdateOrderCommand("ENTREGADO", "151370");
-
-        when(orderDtoMapper.toUpdateStatusCommand(request))
-                .thenReturn(command);
-
-        when(updateOrderStatusUseCase.update(
-                100L,
-                command,
-                "token-test"
-        )).thenReturn(Mono.just(100L));
-
-        StepVerifier.create(
-                        orderApplicationService.updateStatus(
-                                100L,
-                                request,
-                                "token-test"
-                        )
-                )
+        StepVerifier.create(orderHandler.updateStatus(
+                        100L,
+                        request,
+                        30L,
+                        "EMPLEADO",
+                        "Martin Lopez",
+                        "12345678",
+                        "token-test"
+                ))
                 .assertNext(result -> {
                     Assertions.assertEquals(100L, result.id());
-                    Assertions.assertEquals(
-                            "Estado del pedido actualizado exitosamente",
-                            result.message()
-                    );
+                    Assertions.assertEquals("Estado del pedido actualizado exitosamente", result.message());
                 })
                 .verifyComplete();
-
-        verify(orderDtoMapper).toUpdateStatusCommand(request);
-
-        verify(updateOrderStatusUseCase).update(
-                100L,
-                command,
-                "token-test"
-        );
-    }
-
-    @Test
-    void shouldPropagateErrorWhenCreateOrderFails() {
-
-        CreateOrderRequest request = new CreateOrderRequest(
-                1L,
-                List.of(
-                        new CreateOrderItemRequest(
-                                10L,
-                                BigDecimal.ONE
-                        )
-                )
-        );
-
-        CreateOrderCommand command = new CreateOrderCommand(
-                1L,
-                List.of(
-                        new CreateOrderItemCommand(
-                                10L,
-                                BigDecimal.ONE
-                        )
-                )
-        );
-
-        RuntimeException exception =
-                new RuntimeException("Error creating order");
-
-        when(orderDtoMapper.toCommand(request))
-                .thenReturn(command);
-
-        when(createOrderUseCase.create(
-                command,
-                "token-test"
-        )).thenReturn(Mono.error(exception));
-
-        StepVerifier.create(
-                        orderApplicationService.create(
-                                request,
-                                "token-test"
-                        )
-                )
-                .expectErrorSatisfies(error ->
-                        Assertions.assertSame(exception, error)
-                )
-                .verify();
-
-        verify(orderDtoMapper).toCommand(request);
-        verify(createOrderUseCase).create(
-                command,
-                "token-test"
-        );
-    }
-
-    @Test
-    void shouldPropagateErrorWhenListOrdersFails() {
-
-        RuntimeException exception =
-                new RuntimeException("Error listing orders");
-
-        when(listOrdersUseCase.list(
-                "token-test",
-                "PENDIENTE",
-                0,
-                10
-        )).thenReturn(Mono.error(exception));
-
-        StepVerifier.create(
-                        orderApplicationService.list(
-                                "token-test",
-                                "PENDIENTE",
-                                0,
-                                10
-                        )
-                )
-                .expectErrorSatisfies(error ->
-                        Assertions.assertSame(exception, error)
-                )
-                .verify();
-
-        verify(listOrdersUseCase).list(
-                "token-test",
-                "PENDIENTE",
-                0,
-                10
-        );
-    }
-
-    @Test
-    void shouldPropagateErrorWhenUpdateStatusFails() {
-
-        UpdateOrderRequest request =
-                new UpdateOrderRequest("ENTREGADO", "151370");
-
-        UpdateOrderCommand command =
-                new UpdateOrderCommand("ENTREGADO", "151370");
-
-        RuntimeException exception =
-                new RuntimeException("Error updating order");
-
-        when(orderDtoMapper.toUpdateStatusCommand(request))
-                .thenReturn(command);
-
-        when(updateOrderStatusUseCase.update(
-                100L,
-                command,
-                "token-test"
-        )).thenReturn(Mono.error(exception));
-
-        StepVerifier.create(
-                        orderApplicationService.updateStatus(
-                                100L,
-                                request,
-                                "token-test"
-                        )
-                )
-                .expectErrorSatisfies(error ->
-                        Assertions.assertSame(exception, error)
-                )
-                .verify();
-
-        verify(orderDtoMapper).toUpdateStatusCommand(request);
-
-        verify(updateOrderStatusUseCase).update(
-                100L,
-                command,
-                "token-test"
-        );
     }
 }

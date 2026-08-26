@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface ICreateDishServicePort {
 
-    Mono<Dish> create(CreateDishCommand createDishCommand, String token);
+    Mono<Dish> create(CreateDishCommand createDishCommand, Long ownerId);
 }

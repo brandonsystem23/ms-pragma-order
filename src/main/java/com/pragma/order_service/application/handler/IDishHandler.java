@@ -8,12 +8,11 @@ import reactor.core.publisher.Mono;
 
 public interface IDishHandler {
 
-    Mono<DishResponse> create(CreateDishRequest request, String token);
+    Mono<DishResponse> create(CreateDishRequest request, Long ownerId);
 
-    Mono<DishResponse> update(Long dishId, UpdateDishRequest request, String token);
+    Mono<DishResponse> update(Long dishId, UpdateDishRequest request, Long ownerId);
 
-    Mono<DishResponse> updateStatus(Long dishId, Boolean status, String token);
+    Mono<DishResponse> updateStatus(Long dishId, Boolean status, Long ownerId);
 
-    Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size,
-                                                              String token);
+    Mono<PagedResponse<DishResponse>> listByRestaurant(Long restaurantId, String category, int page, int size);
 }

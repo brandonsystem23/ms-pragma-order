@@ -5,5 +5,6 @@ import reactor.core.publisher.Mono;
 
 public interface IUpdateOrderServicePort {
 
-    Mono<Long> update(Long orderId, UpdateOrderCommand updateOrderCommand, String token);
+    Mono<Long> update(Long orderId, UpdateOrderCommand updateOrderCommand, Long userId, String role,
+                      String fullName, String numberDocument, String token);
 }

@@ -1,10 +1,9 @@
-package com.pragma.order_service.domain.model.auth;
+package com.pragma.order_service.infrastructure.security.jwt;
 
 import lombok.Builder;
 
 @Builder
-public record AuthSession(
-
+public record AuthenticatedUser(
         Long userId,
         String fullName,
         String role,

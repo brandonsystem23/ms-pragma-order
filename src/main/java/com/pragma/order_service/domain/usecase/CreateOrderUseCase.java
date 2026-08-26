@@ -16,63 +16,52 @@ import com.pragma.order_service.domain.validation.order.OrderDomainValidator;
 import com.pragma.order_service.domain.validation.order.OrderRegistrationValidator;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import java.util.List;
 
+import java.util.List;
 
 @RequiredArgsConstructor
 public class CreateOrderUseCase implements ICreateOrderServicePort {
 
-    private final IOrderPersistencePort iOrderPersistencePort;
-    private final IDishPersistencePort iDishPersistencePort;
-    private final ITraceabilityWebClientPort iTraceabilityWebClientPort;
+    private final IOrderPersistencePort orderPersistencePort;
+    private final IDishPersistencePort dishPersistencePort;
+    private final ITraceabilityWebClientPort traceabilityWebClientPort;
     private final OrderRegistrationValidator orderRegistrationValidator;
     private final OrderDomainValidator orderDomainValidator;
 
     @Override
-    public Mono<OrderQueryModel> create(CreateOrderCommand createOrderCommand, String token) {
+    public Mono<OrderQueryModel> create(CreateOrderCommand createOrderCommand, Long customerId, String token) {
         return Mono.defer(() -> {
-
             orderDomainValidator.validateForCreate(createOrderCommand);
 
-            return orderRegistrationValidator.validate(
+            return orderRegistrationValidator.validateOrderCreationRules(
                             createOrderCommand.restaurantId(),
                             createOrderCommand.items(),
-                            token
+                            customerId
                     )
-                    .flatMap(customerId -> buildOrder(customerId, createOrderCommand))
-                    .flatMap(iOrderPersistencePort::save)
+                    .then(Mono.defer(() -> buildOrder(customerId, createOrderCommand)))
+                    .flatMap(orderPersistencePort::save)
                     .flatMap(savedOrder ->
-                            iOrderPersistencePort.findOrderDetailById(savedOrder.getId())
+                            orderPersistencePort.findOrderDetailById(savedOrder.getId())
                                     .collectList()
                                     .flatMap(orderDetails ->
                                             sendTraceability(orderDetails, token)
-                                                    .thenReturn(OrderBuilder
-                                                            .buildOrderQueryModel(orderDetails)
-                                                    )
+                                                    .thenReturn(OrderBuilder.buildOrderQueryModel(orderDetails))
                                     )
                     );
         });
     }
 
     private Mono<Order> buildOrder(Long customerId, CreateOrderCommand createOrderCommand) {
-
         List<Long> dishIds = createOrderCommand.items().stream()
                 .map(CreateOrderItemCommand::dishId)
                 .toList();
 
-        return iDishPersistencePort.findByIds(dishIds)
+        return dishPersistencePort.findByIds(dishIds)
                 .collectList()
-                .map(dishes ->
-                        OrderBuilder.buildOrder(
-                                createOrderCommand,
-                                dishes,
-                                customerId)
-                );
+                .map(dishes -> OrderBuilder.buildOrder(createOrderCommand, dishes, customerId));
     }
 
-
     private Mono<Void> sendTraceability(List<OrderDetail> orderDetails, String token) {
-
         OrderDetail detail = orderDetails.getFirst();
 
         Traceability traceability = OrderBuilder.buildTraceability(
@@ -81,9 +70,9 @@ public class CreateOrderUseCase implements ICreateOrderServicePort {
                 RoleNames.CLIENT,
                 null,
                 null,
-                "Pedido creado");
+                "Pedido creado"
+        );
 
-        return iTraceabilityWebClientPort.create(traceability, token)
-                .then();
+        return traceabilityWebClientPort.create(traceability, token).then();
     }
 }

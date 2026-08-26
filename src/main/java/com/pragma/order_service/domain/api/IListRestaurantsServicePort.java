@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface IListRestaurantsServicePort {
 
-    Mono<PageResult<RestaurantListItem>> list(String token, int page, int size);
+    Mono<PageResult<RestaurantListItem>> list(int page, int size);
 }

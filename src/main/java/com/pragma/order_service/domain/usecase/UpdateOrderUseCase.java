@@ -1,5 +1,6 @@
 package com.pragma.order_service.domain.usecase;
 
+import com.pragma.order_service.domain.api.IUpdateOrderServicePort;
 import com.pragma.order_service.domain.builder.OrderBuilder;
 import com.pragma.order_service.domain.exception.DomainErrorCode;
 import com.pragma.order_service.domain.exception.DomainErrorMessages;
@@ -9,9 +10,7 @@ import com.pragma.order_service.domain.model.OrderStatus;
 import com.pragma.order_service.domain.model.RoleNames;
 import com.pragma.order_service.domain.model.Traceability;
 import com.pragma.order_service.domain.model.UserSummary;
-import com.pragma.order_service.domain.model.auth.AuthSession;
 import com.pragma.order_service.domain.model.command.UpdateOrderCommand;
-import com.pragma.order_service.domain.api.IUpdateOrderServicePort;
 import com.pragma.order_service.domain.model.query.OrderDetail;
 import com.pragma.order_service.domain.spi.INotificationWebClientPort;
 import com.pragma.order_service.domain.spi.IOrderPersistencePort;
@@ -22,43 +21,53 @@ import com.pragma.order_service.domain.validation.order.OrderStatusUpdateValidat
 import com.pragma.order_service.domain.validation.order.UpdateOrderDomainValidator;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import java.util.Comparator;
 
+import java.util.Comparator;
 
 @RequiredArgsConstructor
 public class UpdateOrderUseCase implements IUpdateOrderServicePort {
 
-    private final IOrderPersistencePort iOrderPersistencePort;
-    private final IUserWebClientPort iUserWebClientPort;
-    private final INotificationWebClientPort iNotificationWebClientPort;
-    private final ITraceabilityWebClientPort iTraceabilityWebClientPort;
+    private final IOrderPersistencePort orderPersistencePort;
+    private final IUserWebClientPort userWebClientPort;
+    private final INotificationWebClientPort notificationWebClientPort;
+    private final ITraceabilityWebClientPort traceabilityWebClientPort;
     private final UpdateOrderDomainValidator updateOrderStatusDomainValidator;
     private final OrderStatusUpdateValidator orderStatusUpdateValidator;
     private final OrderPinValidator orderPinValidator;
 
     @Override
-    public Mono<Long> update(Long orderId, UpdateOrderCommand updateOrderCommand, String token) {
+    public Mono<Long> update(Long orderId, UpdateOrderCommand updateOrderCommand, Long userId, String role,
+                             String fullName, String numberDocument, String token) {
         return Mono.defer(() -> {
-
             updateOrderStatusDomainValidator.validate(orderId, updateOrderCommand);
 
-            return orderStatusUpdateValidator.getSession(token)
-                    .flatMap(session -> findOrder(orderId)
-                            .flatMap(order -> processStatusUpdate(order, updateOrderCommand, session, token)));
+            return findOrderByIdOrFail(orderId)
+                    .flatMap(order -> processStatusUpdate(
+                            order,
+                            updateOrderCommand,
+                            userId,
+                            role,
+                            fullName,
+                            numberDocument,
+                            token
+                    ));
         });
     }
 
     private Mono<Long> processStatusUpdate(
             Order order,
             UpdateOrderCommand command,
-            AuthSession session,
+            Long userId,
+            String role,
+            String fullName,
+            String numberDocument,
             String token
     ) {
         return switch (command.status()) {
-            case OrderStatus.IN_PREPARATION -> assignOrder(order, session, token);
-            case OrderStatus.READY -> markOrderReady(order, session, token);
-            case OrderStatus.DELIVERED -> deliverOrder(order, session, command.pin(), token);
-            case OrderStatus.CANCELLED -> cancelOrder(order, session, token);
+            case OrderStatus.IN_PREPARATION -> assignOrder(order, userId, role, fullName, token);
+            case OrderStatus.READY -> markOrderReady(order, userId, role, fullName, token);
+            case OrderStatus.DELIVERED -> deliverOrder(order, userId, role, fullName, numberDocument, command.pin(), token);
+            case OrderStatus.CANCELLED -> cancelOrder(order, userId, role, fullName, token);
             default -> Mono.error(new DomainException(
                     DomainErrorCode.VALIDATION_ERROR,
                     DomainErrorMessages.ORDER_STATUS_UPDATE_NOT_SUPPORTED
@@ -66,90 +75,96 @@ public class UpdateOrderUseCase implements IUpdateOrderServicePort {
         };
     }
 
-    private Mono<Long> assignOrder(Order order, AuthSession session, String token) {
-        return orderStatusUpdateValidator.validateAssignOrder(order, session)
+    private Mono<Long> assignOrder(Order order, Long userId, String role, String fullName, String token) {
+        return orderStatusUpdateValidator.validateEmployeeCanAssignOrder(userId, role, order)
+                .then(Mono.defer(() ->
+                        orderStatusUpdateValidator.findRestaurantIdByEmployeeOrFail(userId)
+                ))
                 .then(Mono.defer(() -> {
-                    order.setEmployeeAssignedId(session.userId());
+                    order.setEmployeeAssignedId(userId);
                     order.setStatus(OrderStatus.IN_PREPARATION);
-                    return saveAndTrace(order, session, "Pedido en preparación", token);
+                    return saveAndTrace(order, userId, role, fullName, "Pedido en preparación", token);
                 }));
     }
 
-    private Mono<Long> markOrderReady(Order order, AuthSession session, String token) {
-        return orderStatusUpdateValidator.validateMarkReady(order, session)
-                .then(Mono.defer(() -> iUserWebClientPort.findById(order.getCustomerId(), token)
+    private Mono<Long> markOrderReady(Order order, Long userId, String role, String fullName, String token) {
+        return orderStatusUpdateValidator.validateEmployeeCanMarkOrderReady(userId, role, order)
+                .then(Mono.defer(() -> userWebClientPort.findById(order.getCustomerId(), token)
                         .map(UserSummary::phone)
-                        .flatMap(phone -> iNotificationWebClientPort.sendReadyNotification(phone, token))
+                        .flatMap(phone -> notificationWebClientPort.sendReadyNotification(phone, token))
                         .then(Mono.defer(() -> {
                             order.setStatus(OrderStatus.READY);
-                            return saveAndTrace(order, session, "Pedido listo para entregar", token);
+                            return saveAndTrace(order, userId, role, fullName, "Pedido listo para entregar", token);
                         }))));
     }
 
-    private Mono<Long> deliverOrder(Order order, AuthSession session, String pin, String token) {
-        return orderStatusUpdateValidator.validateDeliver(order, session)
-                .then(Mono.defer(() -> orderPinValidator.validateDeliveryPin(session, pin)))
+    private Mono<Long> deliverOrder(Order order, Long userId, String role, String fullName,
+                                    String numberDocument, String pin, String token) {
+        return orderStatusUpdateValidator.validateEmployeeCanDeliverOrder(userId, role, order)
+                .then(Mono.defer(() -> orderPinValidator.validateDeliveryPin(numberDocument, pin)))
                 .then(Mono.defer(() -> {
                     order.setStatus(OrderStatus.DELIVERED);
-                    return saveAndTrace(order, session, "Pedido entregado", token);
+                    return saveAndTrace(order, userId, role, fullName, "Pedido entregado", token);
                 }));
     }
 
-    private Mono<Long> cancelOrder(Order order, AuthSession session, String token) {
-        return orderStatusUpdateValidator.validateCancel(order, session)
+    private Mono<Long> cancelOrder(Order order, Long userId, String role, String fullName, String token) {
+        return orderStatusUpdateValidator.validateClientCanCancelOrder(userId, role, order)
                 .then(Mono.defer(() -> {
                     order.setStatus(OrderStatus.CANCELLED);
-                    return saveAndTrace(order, session, "Pedido cancelado", token);
+                    return saveAndTrace(order, userId, role, fullName, "Pedido cancelado", token);
                 }));
     }
 
-    private Mono<Order> findOrder(Long orderId) {
-        return iOrderPersistencePort.findById(orderId)
+    private Mono<Order> findOrderByIdOrFail(Long orderId) {
+        return orderPersistencePort.findById(orderId)
                 .switchIfEmpty(Mono.error(new DomainException(
                         DomainErrorCode.ORDER_NOT_FOUND,
                         DomainErrorMessages.ORDER_NOT_FOUND
                 )));
     }
 
-    private Mono<Long> saveAndTrace(Order order, AuthSession session, String description, String token) {
-        return iOrderPersistencePort.save(order)
+    private Mono<Long> saveAndTrace(Order order, Long userId, String role, String fullName,
+                                    String description, String token) {
+        return orderPersistencePort.save(order)
                 .flatMap(savedOrder ->
-                        buildAndSendTraceability(savedOrder, session, description, token)
+                        buildAndSendTraceability(savedOrder, userId, role, fullName, description, token)
                                 .thenReturn(savedOrder.getId())
                 );
     }
 
-    private Mono<Void> buildAndSendTraceability(Order order, AuthSession session, String description, String token) {
-
-        return iOrderPersistencePort.findOrderDetailById(order.getId())
+    private Mono<Void> buildAndSendTraceability(Order order, Long userId, String role, String fullName,
+                                                String description, String token) {
+        return orderPersistencePort.findOrderDetailById(order.getId())
                 .collectList()
                 .flatMap(orderDetails -> {
                     OrderDetail latestDetail = orderDetails.stream()
                             .max(Comparator.comparing(OrderDetail::getUpdatedAt))
                             .orElseThrow();
 
-                    return sendTraceability(latestDetail, description, token, session);
+                    return sendTraceability(latestDetail, userId, role, fullName, description, token);
                 });
     }
 
-    private Mono<Void> sendTraceability(OrderDetail detail, String description, String token, AuthSession session) {
+    private Mono<Void> sendTraceability(OrderDetail detail, Long userId, String role, String fullName,
+                                        String description, String token) {
         Long employeeAssignedId = null;
         String employeeAssignedName = null;
-        if (session.role().equalsIgnoreCase(RoleNames.EMPLOYEE)) {
-            employeeAssignedId = session.userId();
-            employeeAssignedName = session.fullName();
+
+        if (RoleNames.EMPLOYEE.equalsIgnoreCase(role)) {
+            employeeAssignedId = userId;
+            employeeAssignedName = fullName;
         }
 
         Traceability traceability = OrderBuilder.buildTraceability(
                 detail,
-                detail.getCustomerId(),
-                session.role(),
+                userId,
+                role,
                 employeeAssignedId,
                 employeeAssignedName,
                 description
         );
 
-        return iTraceabilityWebClientPort.create(traceability, token)
-                .then();
+        return traceabilityWebClientPort.create(traceability, token).then();
     }
 }

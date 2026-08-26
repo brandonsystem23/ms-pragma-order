@@ -5,6 +5,7 @@ import com.pragma.order_service.application.dto.response.PagedResponse;
 import com.pragma.order_service.application.dto.response.RestaurantListResponse;
 import com.pragma.order_service.application.dto.response.RestaurantResponse;
 import com.pragma.order_service.application.handler.IRestaurantHandler;
+import com.pragma.order_service.infrastructure.security.jwt.AuthenticatedUser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,20 +18,24 @@ import reactor.test.StepVerifier;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RestaurantControllerTest {
 
     @Mock
-    private IRestaurantHandler iRestaurantHandler;
+    private IRestaurantHandler restaurantHandler;
 
     @InjectMocks
     private RestaurantController restaurantController;
 
     @Test
     void shouldCreateRestaurantSuccessfully() {
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(1L)
+                .role("ADMINISTRADOR")
+                .build();
+
         CreateRestaurantRequest request = new CreateRestaurantRequest(
                 "Restaurante La 70",
                 "123456789",
@@ -53,9 +58,9 @@ class RestaurantControllerTest {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        when(iRestaurantHandler.create(any(), anyString())).thenReturn(Mono.just(response));
+        when(restaurantHandler.create(request, "token-test")).thenReturn(Mono.just(response));
 
-        StepVerifier.create(restaurantController.create("Bearer token-test", request))
+        StepVerifier.create(restaurantController.create(user, "Bearer token-test", request))
                 .assertNext(result -> {
                     Assertions.assertEquals(1L, result.id());
                     Assertions.assertEquals("Restaurante La 70", result.name());
@@ -65,9 +70,15 @@ class RestaurantControllerTest {
 
     @Test
     void shouldListRestaurantsSuccessfully() {
+        AuthenticatedUser user = AuthenticatedUser.builder()
+                .userId(10L)
+                .role("CLIENTE")
+                .build();
+
         PagedResponse<RestaurantListResponse> response = PagedResponse.<RestaurantListResponse>builder()
                 .content(List.of(
                         RestaurantListResponse.builder()
+                                .id(1L)
                                 .name("Burger House")
                                 .urlLogo("https://logo.com/burger.png")
                                 .build()
@@ -78,14 +89,12 @@ class RestaurantControllerTest {
                 .totalPages(1)
                 .build();
 
-        when(iRestaurantHandler.list(anyString(), anyInt(), anyInt()))
-                .thenReturn(Mono.just(response));
+        when(restaurantHandler.list(0, 10)).thenReturn(Mono.just(response));
 
-        StepVerifier.create(restaurantController.list("Bearer token-test", 0, 10))
+        StepVerifier.create(restaurantController.list(user, 0, 10))
                 .assertNext(result -> {
                     Assertions.assertEquals(1, result.content().size());
                     Assertions.assertEquals("Burger House", result.content().getFirst().name());
-                    Assertions.assertEquals("https://logo.com/burger.png", result.content().getFirst().urlLogo());
                 })
                 .verifyComplete();
     }

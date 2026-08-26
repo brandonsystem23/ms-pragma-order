@@ -10,5 +10,5 @@ public interface IRestaurantHandler {
 
     Mono<RestaurantResponse> create(CreateRestaurantRequest request, String token);
 
-    Mono<PagedResponse<RestaurantListResponse>> list(String token, int page, int size);
+    Mono<PagedResponse<RestaurantListResponse>> list(int page, int size);
 }
